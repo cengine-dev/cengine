@@ -1,10 +1,6 @@
-//
-// Created by mrmar on 02/08/2025.
-//
-
-#include "TestLibC.hpp"
-
 #include <iostream>
+
+#include <engine/TestLibC.hpp>
 
 void TestLibC::test() {
     std::cout << "Iniciando o jogo..." << std::endl;

@@ -1,30 +1,36 @@
-# CMakeList.txt: projeto de CMake para cengine, incluir origem e definir
-# lógica específica a um projeto aqui.
-#
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 
-include(FetchContent)
+project(cengine VERSION 0.1.0 LANGUAGES CXX)
 
-project(CEngine)
-
+# Define padrão do projeto
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Inclui todos os diretórios de headers dentro de src/
-include_directories(src)
+# Define os diretórios principais
+set(CENGINE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(CENGINE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-# -----------------------------
-# Código do projeto (Biblioteca)
-# -----------------------------
-
-# Coleta os arquivos fonte do projeto
-file(GLOB_RECURSE PROJECT_SOURCES
-        "src/*.cpp" "src/*.h"
+# Define os arquivos fonte (.cpp)
+file(GLOB_RECURSE CENGINE_SOURCES
+        ${CENGINE_SRC_DIR}/*.cpp
 )
 
-# Cria a biblioteca.
-# O "core_lib" é o nome da sua biblioteca. Você pode mudar para algo como "MyEngine".
-# O tipo STATIC significa que ela será uma biblioteca estática.
-add_library(cengine_lib STATIC ${PROJECT_SOURCES})
-target_include_directories(cengine_lib PUBLIC src)
+# Cria a biblioteca estática
+add_library(cengine_lib STATIC ${CENGINE_SOURCES})
+
+# Define os diretórios de include públicos
+target_include_directories(cengine_lib
+        PUBLIC
+        ${CENGINE_INCLUDE_DIR}
+)
+
+# Define as propriedades da biblioteca
+set_target_properties(cengine_lib PROPERTIES
+        OUTPUT_NAME "cengine"
+        CXX_STANDARD 20
+)
+
+# Opcional: instalação da lib (se for distribuir)
+# install(TARGETS cengine_lib DESTINATION lib)
+# install(DIRECTORY ${CENGINE_INCLUDE_DIR}/ DESTINATION include)
