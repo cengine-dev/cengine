@@ -3,3 +3,9 @@
 //
 
 #include "TestLibC.hpp"
+
+#include <iostream>
+
+void TestLibC::test() {
+    std::cout << "Iniciando o jogo..." << std::endl;
+}

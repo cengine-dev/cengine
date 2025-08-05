@@ -3,5 +3,5 @@
 class TestLibC {
 
 public:
-	void test();
+	static void test();
 };
