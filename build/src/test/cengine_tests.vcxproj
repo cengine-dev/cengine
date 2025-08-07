@@ -338,7 +338,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   <ItemGroup>
     <ClCompile Include="C:\Users\mrmar\Documents\projetos_de_estudo\c++\cengine\src\test\main.cpp" />
     <ClCompile Include="C:\Users\mrmar\Documents\projetos_de_estudo\c++\cengine\src\test\engine\service\repository\SceneRepositoryTest.cpp" />
-    <ClCompile Include="C:\Users\mrmar\Documents\projetos_de_estudo\c++\cengine\src\test\engine\service\RouterServiceTest.cpp" />
+    <ClCompile Include="C:\Users\mrmar\Documents\projetos_de_estudo\c++\cengine\src\test\engine\service\impl\RouterInMemoryTest.cpp" />
+    <ClCompile Include="C:\Users\mrmar\Documents\projetos_de_estudo\c++\cengine\src\test\engine\GameManagerTest.cpp" />
+    <ClCompile Include="C:\Users\mrmar\Documents\projetos_de_estudo\c++\cengine\src\test\engine\EngineManagerTest.cpp" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

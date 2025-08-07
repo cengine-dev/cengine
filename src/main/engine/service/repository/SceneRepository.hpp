@@ -6,10 +6,11 @@
 #include <unordered_map>
 
 #include "../../../../../include/engine/IScene.hpp"
+#include "ISceneRepository.hpp" 
 
 class IState;
 
-class SceneRepository {
+class SceneRepository final : public ISceneRepository {
     std::unordered_map<std::string, std::unique_ptr<IScene>> m_scenes;
     std::unordered_map<std::string, std::function<std::unique_ptr<IScene>()>> m_factories;
 
@@ -17,24 +18,24 @@ class SceneRepository {
     std::unique_ptr<IState> m_currentState;
 
 public:
-    explicit SceneRepository(const std::unique_ptr<IState> &initialState);
-    ~SceneRepository() = default;
+    explicit SceneRepository(std::unique_ptr<IState> initialState);
+    ~SceneRepository() override = default;
 
-    void registerFactory(const std::string& name, std::function<std::unique_ptr<IScene>()> factory);
+    void registerFactory(const std::string& name, std::function<std::unique_ptr<IScene>()> factory) override;
 
-    [[nodiscard]] IState& getCurrentStateGame() const;
+    [[nodiscard]] IState& getCurrentStateGame() const override;
 
-    [[nodiscard]] IState& getNextStateGame() const;
+    [[nodiscard]] IState& getNextStateGame() const override;
 
-    void persisteCurrentState();
+    void persisteCurrentState() override;
 
-    void persistNextState(std::unique_ptr<IState> state);
+    void persistNextState(std::unique_ptr<IState> state) override;
 
-    IScene& getScene(const std::string& name);
+    IScene& getScene(const std::string& name) override;
 
-    void unloadScene(const std::string& name);
+    void unloadScene(const std::string& name) override;
 
-    void unloadAll();
+    void unloadAll() override;
 
-    bool isNextStateEqualsToCurrentScene() const;
+    bool isNextStateEqualsToCurrentScene() const override;
 };

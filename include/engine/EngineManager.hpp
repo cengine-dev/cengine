@@ -2,19 +2,19 @@
 
 #include <memory>
 
-#include "GameManager.hpp"
+#include "IGameManager.hpp"
 #include "IWindowManager.hpp"
 
 class EngineManager {
     void run();
     std::unique_ptr<IWindowManager> m_windowManager;
-    std::unique_ptr<GameManager> m_gameManager;
+    std::unique_ptr<IGameManager> m_gameManager;
     bool m_isRunning;
 
 public:
     EngineManager(
         std::unique_ptr<IWindowManager> windowManager,
-        std::unique_ptr<GameManager> gameManager);
+        std::unique_ptr<IGameManager> gameManager);
 
     ~EngineManager() = default;
 

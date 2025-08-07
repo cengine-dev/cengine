@@ -2,12 +2,13 @@
 
 #include <engine/IState.hpp>
 
-SceneRepository::SceneRepository(const std::unique_ptr<IState> &initialState) {
+SceneRepository::SceneRepository(std::unique_ptr<IState> initialState){
     m_nextState = initialState->clone();
     m_currentState = initialState->clone();
 }
 
-void SceneRepository::registerFactory(const std::string &name, std::function<std::unique_ptr<IScene>()> factory) {
+void SceneRepository::registerFactory(const std::string &name, std::function<std::unique_ptr<IScene>()> factory)
+{
     m_factories[name] = std::move(factory);
 }
 

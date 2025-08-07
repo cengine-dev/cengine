@@ -1,34 +1,34 @@
-#include <engine/GameManager.hpp>
+#include "GameManager.hpp"
+
 #include <engine/IScene.hpp>
 
 #include <iostream>
 #include <utility>
 
-#include "service/RouterService.hpp"
+#include "service/IRouter.hpp"
 
-GameManager::GameManager(std::shared_ptr<RouterService> routerService) : m_routerService(std::move(routerService)){}
-GameManager::~GameManager() = default;
+GameManager::GameManager(std::shared_ptr<IRouter> routerService) : m_routerService(std::move(routerService)){}
 
-void GameManager::onEnter() const {
+void GameManager::onEnter() {
     if (IScene& screen = m_routerService->getCurrentCachedScreen(); !screen.isOnEnterExecuted()) {
         screen.onEnter();
         screen.onEnterExecuted();
     }
 }
 
-void GameManager::render() const {
+void GameManager::render() {
     IScene& screen = m_routerService->getCurrentCachedScreen();
 
     screen.draw();
 }
 
-void GameManager::input() const {
+void GameManager::input() {
     IScene& screen = m_routerService->getCurrentCachedScreen();
 
     screen.input();
 }
 
-void GameManager::onExit() const {
+void GameManager::onExit() {
     if (m_routerService->hasNextScreen()) {
         IScene& screen = m_routerService->getCurrentCachedScreen();
         screen.onExit();

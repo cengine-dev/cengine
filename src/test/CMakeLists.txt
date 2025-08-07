@@ -19,7 +19,10 @@ FetchContent_MakeAvailable(googletest)
 set(TEST_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine/service/repository/SceneRepositoryTest.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/engine/service/RouterServiceTest.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/engine/service/impl/RouterInMemoryTest.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/engine/GameManagerTest.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/engine/EngineManagerTest.cpp"
+    
     # Adicione aqui qualquer outro arquivo de teste que você criar no futuro.
 )
 

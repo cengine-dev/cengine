@@ -3,7 +3,7 @@
 #include <iostream>
 
 EngineManager::EngineManager(std::unique_ptr<IWindowManager> windowManager,
-                             std::unique_ptr<GameManager> gameManager) : m_windowManager(std::move(windowManager)),
+                             std::unique_ptr<IGameManager> gameManager) : m_windowManager(std::move(windowManager)),
                                                                          m_gameManager(std::move(gameManager)),
                                                                          m_isRunning(false) {
 }
@@ -24,10 +24,8 @@ void EngineManager::input() const {
 }
 
 void EngineManager::cleanup() const {
-    std::cout << "EngineManager: cleanup" << std::endl;
-
     if (m_gameManager) {
-        GameManager::cleanup();
+        m_gameManager->cleanup();
     }
 
     if (m_windowManager) {

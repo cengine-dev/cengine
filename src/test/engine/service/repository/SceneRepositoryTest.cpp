@@ -3,29 +3,11 @@
 
 #include <engine/IState.hpp>
 #include <engine/IScene.hpp>
+
+#include <test/mock/MockState.hpp>
+#include <test/mock/MockScene.hpp>
+
 #include "../src/main/engine/service/repository/SceneRepository.hpp"
-
-
-// Mock para IScene
-class MockScene : public IScene {
-public:
-    MOCK_METHOD(void, onEnter, (), (override));
-    MOCK_METHOD(void, draw, (), (override));
-    MOCK_METHOD(void, input, (), (override));
-    MOCK_METHOD(void, onExit, (), (override));
-};
-
-// Mock para IState
-class MockState : public IState {
-public:
-    MOCK_METHOD(std::string, getCode, (), (const, override));
-    MOCK_METHOD(std::string, getName, (), (const, override));
-    MOCK_METHOD(std::unique_ptr<IState>, clone, (), (const, override));
-
-    std::unique_ptr<IState> cloneMock() const {
-        return std::make_unique<MockState>();
-    }
-};
 
 class SceneRepositoryTest : public ::testing::Test {
 protected:

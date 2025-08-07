@@ -7,7 +7,7 @@
     <ClCompile Include="C:\Users\mrmar\Documents\projetos_de_estudo\c++\cengine\src\main\engine\GameManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\mrmar\Documents\projetos_de_estudo\c++\cengine\src\main\engine\service\RouterService.cpp">
+    <ClCompile Include="C:\Users\mrmar\Documents\projetos_de_estudo\c++\cengine\src\main\engine\service\impl\RouterInMemory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\mrmar\Documents\projetos_de_estudo\c++\cengine\src\main\engine\service\repository\SceneRepository.cpp">
