@@ -35,6 +35,8 @@
 
 # VsCode
 *.vs
+*.vscode
+*.cache
 
 # CLion
 *.idea
