@@ -33,7 +33,7 @@ set(INTEGRATION_TEST_SOURCE
 # -------------------------------------------------------------
 add_executable(cengine_tests ${UNIT_TEST_SOURCES} ${INTEGRATION_TEST_SOURCE})
 
-# -------------------------------------------------------------
+# --------------------------------------------------------ö-----
 # 4. Vincular as bibliotecas e diretórios de include
 # -------------------------------------------------------------
 target_link_libraries(cengine_tests
@@ -53,7 +53,7 @@ target_include_directories(cengine_tests
 # 5. Configurar as propriedades do executável de testes
 # -------------------------------------------------------------
 set_target_properties(cengine_tests PROPERTIES
-  CXX_STANDARD 20
+  CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
 )
 

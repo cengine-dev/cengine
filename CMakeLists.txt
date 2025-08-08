@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.23)
 
-project(cengine VERSION 0.1.0 LANGUAGES CXX)
+project(cengine VERSION 0.0.1 LANGUAGES CXX)
 
 # Define padrão do projeto
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -27,7 +27,7 @@ target_include_directories(cengine_lib PUBLIC ${CENGINE_INCLUDE_DIR}
 )
 
 # Define as propriedades da biblioteca
-set_target_properties(cengine_lib PROPERTIES OUTPUT_NAME "cengine" CXX_STANDARD 20
+set_target_properties(cengine_lib PROPERTIES OUTPUT_NAME "cengine" CXX_STANDARD 23
 )
 
 # Opcional: instalação da lib (se for distribuir)

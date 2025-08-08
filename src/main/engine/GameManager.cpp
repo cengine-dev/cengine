@@ -40,7 +40,10 @@ bool GameManager::shouldExist() const {
     return m_routerService->getCurrentStateGameCode() == "exit";
 }
 
+
+
 void GameManager::cleanup() {
+    // std::println("");
     std::cout << "TerminalGameManager: cleanup" << std::endl;
 }
 
