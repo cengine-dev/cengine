@@ -1,6 +1,6 @@
 # 01 — Adicionar `override` em todas as sobrescritas
 
-- **Status:** todo
+- **Status:** done ✅ (2026-07-04, branch `feature/ai-plan-task-01`)
 - **Prioridade:** 🔴 Alta
 - **Categoria:** Boas práticas / correção
 - **Depende de:** —
@@ -40,9 +40,17 @@ Toda função que sobrescreve um método virtual deve estar marcada com `overrid
 
 ## Critérios de aceite
 
-- [ ] `grep` por métodos herdados sem `override` retorna vazio.
-- [ ] Projeto compila em Debug e Release.
-- [ ] `ctest` continua 100% verde.
+- [x] `grep` por métodos herdados sem `override` retorna vazio.
+- [x] Projeto compila em Debug e Release.
+- [x] `ctest` continua 100% verde.
+
+## Resultado da execução
+
+- `RouterInMemory.hpp`: adicionado `override` aos 11 métodos herdados de `IRouter`.
+- `GameManager.hpp`: `cleanup()` agora é `override`.
+- `SceneRepository.hpp`: já estava 100% coberto (nenhuma mudança).
+- Build limpo (nenhum `override` gerou erro → **não havia** bug de assinatura
+  escondido). `ctest`: **30/30 verde**.
 
 ## Riscos
 
