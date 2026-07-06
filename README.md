@@ -78,6 +78,11 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/mrmarmitt/cengine.git
   GIT_TAG        main   # pin a tagged release once available
 )
+
+# Consumers don't need cengine's own test suite. Turn it off before making the
+# dependency available — otherwise cengine fetches GoogleTest at configure time
+# (CENGINE_BUILD_TESTS defaults to ON), which is wasteful and fails offline.
+set(CENGINE_BUILD_TESTS OFF)
 FetchContent_MakeAvailable(cengine)
 
 add_executable(my_game src/main.cpp)
