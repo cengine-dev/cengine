@@ -11,6 +11,14 @@
 
 namespace cengine::routing {
 
+/**
+ * @brief `ISceneRepository` em memória: mapa de factories + cache de cenas
+ *        instanciadas, com o par de estados atual/próximo.
+ *
+ * `getScene()` instancia a cena via factory na primeira vez e a mantém em cache
+ * até um `unloadScene`/`unloadAll`. Os estados são guardados como cópias
+ * independentes (via `IState::clone()`), sustentando a navegação em duas fases.
+ */
 class SceneRepository final : public ISceneRepository {
     std::unordered_map<std::string, std::unique_ptr<core::IScene>> m_scenes;
     std::unordered_map<std::string, std::function<std::unique_ptr<core::IScene>()>> m_factories;

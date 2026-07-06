@@ -2,16 +2,37 @@
 
 namespace cengine::core {
 
+/**
+ * @brief Ponte entre o game loop da engine e as regras/telas do jogo.
+ *
+ * O `EngineManager` conhece apenas esta interface; toda a lógica de "qual cena
+ * está ativa e o que ela faz" fica do lado do jogo (por exemplo, na
+ * implementação `cengine::routing::GameManager`, que delega para o roteador).
+ *
+ * Os métodos abaixo são chamados a cada iteração do loop, na ordem:
+ * `onEnter()` → `input()` → `render()` → `onExit()`, e por fim `shouldExit()`
+ * decide se o loop continua. `cleanup()` roda uma vez, ao encerrar.
+ */
 class IGameManager {
 public:
     virtual ~IGameManager() = default;
 
+    /// Ativa/entra na cena atual (idempotente por ativação — ver IScene).
     virtual void onEnter() = 0;
+
+    /// Renderiza a cena atual.
     virtual void render() = 0;
+
+    /// Processa a entrada do usuário na cena atual.
     virtual void input() = 0;
+
+    /// Trata a saída da cena atual e efetiva uma eventual troca de estado.
     virtual void onExit() = 0;
+
+    /// Libera recursos do jogo. Chamado uma vez, no encerramento da engine.
     virtual void cleanup() = 0;
 
+    /// @return true quando o jogo pediu para encerrar; para o game loop.
     [[nodiscard]] virtual bool shouldExit() const = 0;
 };
 
