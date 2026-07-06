@@ -8,6 +8,13 @@
 
 namespace cengine::routing {
 
+/**
+ * @brief `IRouter` em memória, apoiado em um `ISceneRepository`.
+ *
+ * Delega o estado e as cenas ao repositório; `commitStateChange()` descarrega a
+ * cena do estado que sai e promove o próximo. `currentScene()` resolve a cena do
+ * estado atual sob demanda (instanciação lazy pelo repositório).
+ */
 class RouterInMemory final : public IRouter {
     std::shared_ptr<ISceneRepository> m_sceneRepository;
 

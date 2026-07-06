@@ -76,24 +76,26 @@ Total Test time (real) = 0.20 sec
   clone de estado, comparação de estados.
 - `RouterInMemoryTest` — API enxuta do Router e delegação para o repositório.
 - `GameManagerTest` — ciclo `onEnter/render/input/onExit` e condição de saída.
+- `SceneLifetimeTest` (integração) — navegar → unload nas implementações reais,
+  garantindo que nenhuma referência de cena sobrevive ao unload (rede contra
+  *use-after-free*; ver [Tarefa 06](task/06-scene-lifetime.md)).
 - `EngineManagerTest` + `EngineManagerIntegrationTest` — loop principal validado
   por **call-log** (ordem exata das chamadas).
 
-## Observações ligadas ao plano de melhoria
+## Observações ligadas ao plano de melhoria (resolvidas)
 
-1. **O preset só funcionou por sorte de ambiente.** `CMakePresets.json` tem
-   caminhos absolutos hardcoded (`C:/msys64/ucrt64/...`) que batem com esta
-   máquina; numa máquina limpa falharia. → **[Tarefa 08](task/08-presets-and-ci.md)**.
+Snapshot de 2026-07-04, mantido como registro. Os três pontos já foram
+endereçados pelo plano:
 
-2. **Rede de segurança sólida.** Os 28 testes (incl. integração por call-log)
-   dão confiança para a cirurgia do `IRouter`. → **[Tarefa 05](task/05-redesign-irouter.md)**.
+1. ✅ **Preset por sorte de ambiente** (caminhos hardcoded no `CMakePresets.json`)
+   → resolvido na **[Tarefa 08](task/08-presets-and-ci.md)**: presets portáveis
+   versionados + máquina-específicos no `CMakeUserPresets.json` (git-ignored).
 
-3. **Os nomes dos próprios testes carregam os bugs de nomenclatura:**
-   - `GameManagerTest.ShouldExist_WhenStateIsNotExit_ReturnsFalse`
-   - `SceneRepositoryTest.IsNextStateEqualsToCurrentSceneReturnsTrueIfCodesDifferent`
-     (nome diz "Equals" mas retorna true quando os códigos **diferem**)
+2. ✅ **Rede de segurança** para a cirurgia do `IRouter` → o redesenho foi feito
+   na **[Tarefa 05b](task/05b-redesign-irouter.md)** com a suíte verde.
 
-   Ambos serão renomeados junto do código na **[Tarefa 02](task/02-fix-inverted-names.md)**.
+3. ✅ **Nomes invertidos nos testes** (`ShouldExist…`, `IsNextState…Equals…`)
+   → renomeados junto do código na **[Tarefa 02](task/02-fix-inverted-names.md)**.
 
 ## Protocolo para as tarefas do plano
 

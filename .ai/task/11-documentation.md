@@ -1,6 +1,6 @@
 # 11 — Documentação (Doxygen nos headers + uso no README)
 
-- **Status:** todo
+- **Status:** done
 - **Prioridade:** 🟢 Baixa
 - **Categoria:** Documentação
 - **Depende de:** todas as anteriores (documentar a API **já estabilizada**, para
@@ -45,9 +45,28 @@ pela documentação, sem ler a implementação.
 
 ## Critérios de aceite
 
-- [ ] Todos os headers públicos com doc-comment explicando contrato.
-- [ ] README com exemplo de consumo via FetchContent e montagem da engine.
-- [ ] Nenhum código comentado remanescente (coordenar com tarefa 09).
+- [x] Todos os headers públicos com doc-comment explicando contrato.
+- [x] README com exemplo de consumo via FetchContent e montagem da engine.
+- [x] Nenhum código comentado remanescente (coordenar com tarefa 09).
+
+## Implementação
+
+- **Doxygen** nos headers públicos de `core` (`IScene`, `IGameManager`,
+  `IWindowManager`, `EngineManager`) e `routing` (`IState`, `IRouter`,
+  `ISceneRepository`, `GameManager`, `RouterInMemory`, `SceneRepository`):
+  brief de classe + contrato/ordem de cada método (ciclo de vida da cena,
+  navegação em duas fases, `clone()` = Prototype, contratos de tempo de vida da
+  tarefa 06).
+- **README**: nova seção *Usage* com consumo via `FetchContent` (espelhando o
+  8Puzzle, com nota de que os targets modulares vivem no `main`) e um exemplo
+  mínimo de montagem (`SceneRepository → RouterInMemory → GameManager →
+  EngineManager`, registro de cenas por factory e navegação por estados).
+- **`.ai/build-and-test.md`**: atualizado — cobertura inclui `SceneLifetimeTest`,
+  observações do snapshot marcadas como resolvidas, link morto corrigido.
+- Os paths na descrição original desta tarefa (`include/engine/*.hpp`) eram
+  pré-05a; a doc foi aplicada na estrutura atual (`core/…`, `modules/routing/…`).
+- (Opcional) pasta `documentation/` e geração Doxygen no CMake/CI: **não feitos**
+  — ficam como melhoria futura, sem bloquear o critério de aceite.
 
 ## Riscos
 

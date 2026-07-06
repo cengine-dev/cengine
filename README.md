@@ -65,6 +65,78 @@ target_link_libraries(my_game PRIVATE
 )
 ```
 
+## Usage
+
+CEngine is consumed via CMake's `FetchContent` (this is how the sibling
+[8Puzzle](https://github.com/mrmarmitt/8puzzle) project uses it):
+
+```cmake
+include(FetchContent)
+
+FetchContent_Declare(
+  cengine
+  GIT_REPOSITORY https://github.com/mrmarmitt/cengine.git
+  GIT_TAG        main   # pin a tagged release once available
+)
+FetchContent_MakeAvailable(cengine)
+
+add_executable(my_game src/main.cpp)
+target_link_libraries(my_game PRIVATE
+    cengine::core        # game loop + ports (always)
+    cengine::routing     # scene/state routing (optional)
+)
+```
+
+> The `cengine::core` / `cengine::routing` targets require the modular layout on
+> `main`. The `0.0.1` tag predates it (single `cengine_lib` target).
+
+### Minimal assembly
+
+The engine is **graphics-agnostic**: you implement the ports (window + scenes)
+and the engine drives the loop. A minimal game wires up a window manager, a
+router over a scene repository, and hands both to the `EngineManager`:
+
+```cpp
+#include <memory>
+#include <cengine/core/EngineManager.hpp>
+#include <cengine/routing/GameManager.hpp>
+#include <cengine/routing/RouterInMemory.hpp>
+#include <cengine/routing/SceneRepository.hpp>
+
+using namespace cengine;
+
+int main() {
+    // 1. Repository seeded with the initial state (you provide MyState : IState).
+    auto repository = std::make_shared<routing::SceneRepository>(
+        std::make_unique<MyState>("main_menu"));
+
+    // 2. Register a scene factory per state code (lazy instantiation).
+    //    You provide MenuScene / GameplayScene : cengine::core::IScene.
+    repository->registerFactory("main_menu", [] { return std::make_unique<MenuScene>(); });
+    repository->registerFactory("gameplay",  [] { return std::make_unique<GameplayScene>(); });
+
+    // 3. Router over the repository, exposed to the game as an IGameManager.
+    auto router      = std::make_shared<routing::RouterInMemory>(repository);
+    auto gameManager = std::make_unique<routing::GameManager>(router);
+
+    // 4. Run the loop (you provide MyWindowManager : cengine::core::IWindowManager).
+    core::EngineManager engine{
+        std::make_unique<MyWindowManager>(),
+        std::move(gameManager)
+    };
+    engine.start(); // blocks until a scene routes to the exit state
+    return 0;
+}
+```
+
+To navigate, a scene calls `router->requestState(std::make_unique<MyState>("gameplay"))`;
+the switch is committed at the end of the frame (`onExit`). Routing to the
+`cengine::routing::kExitStateCode` state stops the loop.
+
+The public headers carry Doxygen comments describing each contract — start from
+[`IScene`](core/include/cengine/core/IScene.hpp) and
+[`IGameManager`](core/include/cengine/core/IGameManager.hpp).
+
 ## Working context (`.ai/`)
 
 The [`.ai/`](.ai/) folder is the starting point for understanding **what is being
