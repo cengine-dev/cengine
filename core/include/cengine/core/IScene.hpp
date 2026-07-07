@@ -14,9 +14,9 @@ namespace cengine::core {
  * `onEnter()` (só na primeira vez em que a cena é ativada) → `input()` →
  * `draw()`. Ao trocar de cena, a cena que sai recebe `onExit()`.
  *
- * O par `onEnterExecuted()`/`isOnEnterExecuted()` existe para garantir que
- * `onEnter()` rode **uma única vez** por ativação, mesmo que a cena permaneça
- * ativa por muitas iterações.
+ * A garantia de que `onEnter()` roda **uma única vez** por ativação é do
+ * orquestrador (ex.: `cengine::routing::GameManager`), não da cena — a
+ * implementação não precisa (nem deve) manter flag de "já ativada".
  *
  * @note Contrato de tempo de vida: referências a uma cena obtidas via
  *       `cengine::routing::IRouter::currentScene()` só valem até a próxima
@@ -24,18 +24,11 @@ namespace cengine::core {
  */
 class IScene {
 public:
-    IScene() = default;
     virtual ~IScene() = default;
 
     /// Inicialização única da cena (carregar recursos, montar objetos).
     /// Chamado uma vez por ativação, antes do primeiro `input()`/`draw()`.
     virtual void onEnter() = 0;
-
-    /// Marca `onEnter()` como já executado (chamado pela engine após `onEnter()`).
-    virtual void onEnterExecuted() = 0;
-
-    /// @return true se `onEnter()` já rodou nesta ativação (evita reexecução).
-    [[nodiscard]] virtual bool isOnEnterExecuted() const = 0;
 
     /// Desenha o quadro atual. Chamado toda iteração enquanto a cena está ativa.
     virtual void draw() = 0;

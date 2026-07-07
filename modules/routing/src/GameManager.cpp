@@ -13,9 +13,12 @@ namespace cengine::routing {
 GameManager::GameManager(std::shared_ptr<IRouter> routerService) : m_routerService(std::move(routerService)){}
 
 void GameManager::onEnter() {
-    if (core::IScene& scene = m_routerService->currentScene(); !scene.isOnEnterExecuted()) {
-        scene.onEnter();
-        scene.onEnterExecuted();
+    // A ativação é rastreada aqui (não na cena): compara o código do estado
+    // atual com o último ativado; o registro é limpo no commit da navegação.
+    const std::string code = m_routerService->currentState().getCode();
+    if (code != m_enteredStateCode) {
+        m_routerService->currentScene().onEnter();
+        m_enteredStateCode = code;
     }
 }
 
@@ -48,6 +51,10 @@ void GameManager::onExit() {
     }
 
     m_routerService->commitStateChange();
+
+    // A navegação foi efetivada: a próxima iteração deve ativar a nova cena,
+    // mesmo que o código do estado se repita (ex.: A -> B -> A).
+    m_enteredStateCode.clear();
 }
 
 bool GameManager::shouldExit() const {
