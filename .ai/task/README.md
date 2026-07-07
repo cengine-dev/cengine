@@ -24,6 +24,10 @@ segurança barata** e **separando "mover" de "redesenhar"**.
    ciclo de vida das cenas — agora no lugar final.
 5. **Ecossistema/build (07–08):** padrão C++, presets, CI.
 6. **Limpeza final e documentação (09–11).**
+7. **Ciclo 0.2.0 — design de API (12 → 13):** primeiro tirar a contabilidade
+   de `onEnter` da `IScene` (12, cirurgia pequena), depois separar Router
+   (máquina de estados) de Repository (provedor de cenas) (13). As duas são
+   *breaking* — agrupar no bump 0.2.0.
 
 > Regra prática: manter a suíte de testes **verde a cada tarefa**. Nenhuma
 > tarefa deve ser mergeada com testes quebrados.
@@ -57,6 +61,8 @@ Ler antes de executar as tarefas de arquitetura:
 | 09 | [Higiene de código (includes, código morto)](09-code-hygiene.md) | 🟢 Baixa | Boas práticas |
 | 10 | [Eliminar magic string e estados *stringly-typed*](10-typed-states.md) | 🟢 Baixa | Boas práticas |
 | 11 | [Documentação (Doxygen + uso no README)](11-documentation.md) | 🟢 Baixa | Documentação |
+| 12 | [Tirar a contabilidade de ativação (`onEnter`) da `IScene`](12-scene-activation-bookkeeping.md) | 🟡 Média | Arquitetura |
+| 13 | [Separar responsabilidades: Router × Repository](13-router-repository-responsibilities.md) | 🔴 Alta (arq.) | Arquitetura |
 
 ## Legenda de status
 
