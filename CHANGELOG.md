@@ -5,6 +5,53 @@ All notable changes to CEngine are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-08
+
+Time in the loop (task 14 of the [improvement plan](.ai/task/README.md)): the
+game loop gains a time concept — `update(dt)` with a **fixed timestep** (the
+"fix your timestep" pattern). This closes the last structural gap in the core
+flagged by ADR 0001 and provides the contract a future `cengine::physics`
+module requires.
+
+> **Breaking release.** `IScene` and `IGameManager` gain a pure virtual
+> `update(Seconds dt)` — every consumer must implement it (an empty body is
+> fine). See _Migrating from 0.2.0_ below.
+
+### Added
+
+- **`cengine/core/Time.hpp`** with
+  `using Seconds = std::chrono::duration<double>;` — `std::chrono` end to end
+  in the public API (no raw `double` with ambiguous units).
+- **`IScene::update(Seconds dt)` / `IGameManager::update(Seconds dt)`**: the
+  simulation phase. Fixed-timestep contract: called **0..N times per frame,
+  always with the same `dt`** — scenes must not assume one call per frame nor
+  measure time themselves.
+- **Fixed-timestep loop** in `EngineManager::run()`: frame time is measured
+  with the monotonic `steady_clock` and consumed by an accumulator in constant
+  `fixedDt` steps; the remainder carries over to the next frame. Frame time is
+  clamped to `maxFrameTime` (anti death-spiral).
+- **Configurable timing** in the `EngineManager` constructor: `fixedDt`
+  (default 1/60 s) and `maxFrameTime` (default 250 ms); non-positive values
+  throw `std::invalid_argument` at construction.
+- **Injectable time source** (`clockNow`, default `steady_clock::now`) — loop
+  tests advance a fake clock manually; nothing sleeps or depends on real time.
+
+### Changed
+
+- **Frame order** is now `window.update → onEnter → input → update(dt)* →
+  render → onExit` (README section _The frame and time_ documents the
+  contract).
+
+### Migrating from 0.2.0
+
+- Add `void update(cengine::core::Seconds dt) override {}` to every `IScene`
+  implementation (and to direct `IGameManager` implementations, if any) —
+  mechanical change; leave the body empty if the scene has no simulation.
+- Move any time-dependent logic (animations, timers, stopwatches) into
+  `update(dt)` instead of measuring time inside the scene.
+- Optionally tune the loop:
+  `EngineManager{window, game, Seconds{1.0 / 120.0}}` for a 120 Hz simulation.
+
 ## [0.2.0] - 2026-07-08
 
 API design cycle (tasks 12–13 of the [improvement plan](.ai/task/README.md)):
@@ -152,6 +199,7 @@ routing as an **opt-in module**.
 - Initial single-target (`cengine_lib`) engine: game loop, scene/state
   management, and in-memory router.
 
+[0.3.0]: https://github.com/mrmarmitt/cengine/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/mrmarmitt/cengine/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/mrmarmitt/cengine/compare/0.0.1...0.1.0
 [0.0.1]: https://github.com/mrmarmitt/cengine/releases/tag/0.0.1
