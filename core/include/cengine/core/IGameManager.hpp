@@ -17,7 +17,9 @@ class IGameManager {
 public:
     virtual ~IGameManager() = default;
 
-    /// Ativa/entra na cena atual (idempotente por ativação — ver IScene).
+    /// Ativa/entra na cena atual. Deve ser idempotente por ativação: chamado
+    /// toda iteração, mas só efetiva a entrada uma vez por cena ativada (a
+    /// contabilidade é do implementador, não da cena — ver IScene).
     virtual void onEnter() = 0;
 
     /// Renderiza a cena atual.

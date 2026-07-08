@@ -28,21 +28,46 @@ protected:
     }
 };
 
-TEST_F(GameManagerTest, OnEnter_WhenSceneNotInitialized_CallsOnEnter) {
+TEST_F(GameManagerTest, OnEnter_FirstActivation_CallsOnEnterOnScene) {
+    EXPECT_CALL(*m_mockRouter, currentState()).WillOnce(testing::ReturnRef(m_mockState));
+    EXPECT_CALL(m_mockState, getCode()).WillOnce(testing::Return("main_menu"));
     EXPECT_CALL(*m_mockRouter, currentScene()).WillOnce(testing::ReturnRef(m_mockScene));
-    EXPECT_CALL(m_mockScene, isOnEnterExecuted()).WillOnce(testing::Return(false));
     EXPECT_CALL(m_mockScene, onEnter()).Times(1);
-    EXPECT_CALL(m_mockScene, onEnterExecuted()).Times(1);
 
     m_gameManager->onEnter();
 }
 
-TEST_F(GameManagerTest, OnEnter_WhenSceneAlreadyInitialized_DoesNothing) {
+TEST_F(GameManagerTest, OnEnter_SameStateOnNextIterations_DoesNotReenter) {
+    EXPECT_CALL(*m_mockRouter, currentState()).WillRepeatedly(testing::ReturnRef(m_mockState));
+    EXPECT_CALL(m_mockState, getCode()).WillRepeatedly(testing::Return("main_menu"));
+    // A cena só é tocada na primeira ativação; nas iterações seguintes o
+    // GameManager nem resolve a cena.
     EXPECT_CALL(*m_mockRouter, currentScene()).WillOnce(testing::ReturnRef(m_mockScene));
-    EXPECT_CALL(m_mockScene, isOnEnterExecuted()).WillOnce(testing::Return(true));
-    EXPECT_CALL(m_mockScene, onEnter()).Times(0);
-    EXPECT_CALL(m_mockScene, onEnterExecuted()).Times(0);
+    EXPECT_CALL(m_mockScene, onEnter()).Times(1);
 
+    m_gameManager->onEnter();
+    m_gameManager->onEnter();
+    m_gameManager->onEnter();
+}
+
+TEST_F(GameManagerTest, OnEnter_AfterCommittedNavigation_ReentersEvenWithSameStateCode) {
+    EXPECT_CALL(*m_mockRouter, currentState()).WillRepeatedly(testing::ReturnRef(m_mockState));
+    EXPECT_CALL(m_mockState, getCode()).WillRepeatedly(testing::Return("gameplay"));
+    EXPECT_CALL(*m_mockRouter, currentScene()).WillRepeatedly(testing::ReturnRef(m_mockScene));
+
+    // 1ª ativação.
+    EXPECT_CALL(m_mockScene, onEnter()).Times(1);
+    m_gameManager->onEnter();
+
+    // Navegação efetivada (commit) deve limpar o registro de ativação...
+    EXPECT_CALL(*m_mockRouter, hasPendingStateChange()).WillOnce(testing::Return(true));
+    EXPECT_CALL(m_mockScene, onExit()).Times(1);
+    EXPECT_CALL(*m_mockRouter, commitStateChange()).Times(1);
+    m_gameManager->onExit();
+
+    // ...então a próxima iteração reativa a cena, mesmo com o mesmo código
+    // (proteção para futuras políticas de keep-alive — A -> B -> A).
+    EXPECT_CALL(m_mockScene, onEnter()).Times(1);
     m_gameManager->onEnter();
 }
 

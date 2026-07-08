@@ -37,23 +37,22 @@ public:
     }
 };
 
-// Cena que rastreia seu tempo de vida (contador de instâncias vivas) e se seu
-// onExit() foi chamado. Permite provar que a navegação destrói a cena antiga.
+// Cena que rastreia seu tempo de vida (contador de instâncias vivas), quantas
+// vezes foi ativada (onEnter) e se seu onExit() foi chamado. Permite provar que
+// a navegação destrói a cena antiga e que a reativação acontece via engine.
 class TrackedScene final : public IScene {
     int* m_liveCount;
     bool* m_onExitCalled;
-    bool m_onEnterExecuted{false};
+    int* m_onEnterCount;
 
 public:
-    TrackedScene(int* liveCount, bool* onExitCalled)
-        : m_liveCount(liveCount), m_onExitCalled(onExitCalled) {
+    TrackedScene(int* liveCount, bool* onExitCalled, int* onEnterCount)
+        : m_liveCount(liveCount), m_onExitCalled(onExitCalled), m_onEnterCount(onEnterCount) {
         ++(*m_liveCount);
     }
     ~TrackedScene() override { --(*m_liveCount); }
 
-    void onEnter() override {}
-    void onEnterExecuted() override { m_onEnterExecuted = true; }
-    [[nodiscard]] bool isOnEnterExecuted() const override { return m_onEnterExecuted; }
+    void onEnter() override { ++(*m_onEnterCount); }
     void draw() override {}
     void input() override {}
     void onExit() override { *m_onExitCalled = true; }
@@ -67,6 +66,8 @@ protected:
     int liveB{0};
     bool onExitCalledA{false};
     bool onExitCalledB{false};
+    int onEnterCountA{0};
+    int onEnterCountB{0};
 
     std::shared_ptr<SceneRepository> repository;
     std::shared_ptr<RouterInMemory> router;
@@ -75,10 +76,10 @@ protected:
     void SetUp() override {
         repository = std::make_shared<SceneRepository>(std::make_unique<FakeState>("A"));
         repository->registerFactory("A", [this]() {
-            return std::make_unique<TrackedScene>(&liveA, &onExitCalledA);
+            return std::make_unique<TrackedScene>(&liveA, &onExitCalledA, &onEnterCountA);
         });
         repository->registerFactory("B", [this]() {
-            return std::make_unique<TrackedScene>(&liveB, &onExitCalledB);
+            return std::make_unique<TrackedScene>(&liveB, &onExitCalledB, &onEnterCountB);
         });
 
         router = std::make_shared<RouterInMemory>(repository);
@@ -111,4 +112,29 @@ TEST_F(SceneLifetimeTest, NavigateUnloadsPreviousSceneWithoutDanglingAccess) {
     // memória da cena A já liberada.
     gameManager->onEnter();
     EXPECT_EQ(liveB, 1);
+}
+
+// Regressão para .ai/task/12: navegar A -> B -> A deve REATIVAR a cena A
+// (onEnter roda de novo na volta). Hoje isso é sustentado pelo unload no
+// commit + reset do tracking no GameManager; o teste protege o comportamento
+// caso a política de unload mude (ex.: keep-alive de cenas).
+TEST_F(SceneLifetimeTest, NavigatingBackReactivatesScene) {
+    // Ativa A.
+    gameManager->onEnter();
+    EXPECT_EQ(onEnterCountA, 1);
+
+    // A -> B.
+    router->requestState(std::make_unique<FakeState>("B"));
+    gameManager->onExit();
+    gameManager->onEnter();
+    EXPECT_EQ(onEnterCountB, 1);
+
+    // B -> A: a volta deve reativar A (nova ativação, novo onEnter).
+    router->requestState(std::make_unique<FakeState>("A"));
+    gameManager->onExit();
+    gameManager->onEnter();
+
+    EXPECT_EQ(onEnterCountA, 2);
+    EXPECT_EQ(liveA, 1);
+    EXPECT_EQ(liveB, 0); // B foi descarregada na volta
 }
