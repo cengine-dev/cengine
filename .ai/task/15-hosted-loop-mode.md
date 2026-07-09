@@ -1,12 +1,13 @@
 # 15 — Modo hospedado: dirigir o loop da engine de fora (`frame(dt)`)
 
-- **Status:** todo (aguardando aprendizado da PoC The-Forge do 8Puzzle)
-- **Prioridade:** 🟡 Média (sobe quando a fase 2 da PoC The-Forge começar)
+- **Status:** todo (desenho fechado em 2026-07-09 com o aprendizado da fase 1
+  da PoC The-Forge — pronto para executar)
+- **Prioridade:** 🟡 Média
 - **Categoria:** Arquitetura / core
-- **Depende de:** 14 (tempo no loop) ✅; PoC The-Forge fase 1 (8Puzzle,
-  `.ai/task/01-theforge-poc.md` daquele repo) para validar o desenho com um
-  host real.
-- **Breaking:** não necessariamente — pode ser aditivo (candidato a 0.4.0).
+- **Depende de:** 14 (tempo no loop) ✅; PoC The-Forge fase 1 ✅ (8Puzzle,
+  `.ai/task/01-theforge-poc.md` daquele repo — validou o desenho com um host
+  real).
+- **Breaking:** não — aditivo (candidato a 0.4.0).
 
 ## Problema
 
@@ -81,22 +82,51 @@ private:
 };
 ```
 
-Questões a fechar na execução:
+## Decisões fechadas com a fase 1 da PoC (2026-07-09)
 
-1. **`IWindowManager` no modo hospedado**: o host (The-Forge) é dono da
-   janela — `window.update()` dentro de `frame()` deve existir? Opções:
-   (a) o consumidor passa um `IWindowManager` no-op; (b) `frame()` não toca a
-   janela e `run()` chama `window.update()` antes de `frame()`. A opção (b)
-   é mais honesta (janela é do dono do loop), mas muda a decomposição do
-   quadro — decidir com o caso real na mão.
-2. **`init()`/`cleanup()` no modo hospedado**: quem chama? Provável:
-   `startHosted()`/`stopHosted()` explícitos, ou documentar que o host chama
-   `cleanup()` — alinhar com o ciclo `Init/Exit` do The-Forge.
-3. **Clamp do host**: o The-Forge já clampa o dt dele (0,05 s se > 0,15 s);
-   o `m_maxFrameTime` da engine aplica por cima. Dois clamps são inofensivos,
-   mas documentar.
+A fase 1 (8Puzzle rodando no The-Forge via adaptador manual) respondeu as
+questões abertas e revelou uma nova. Decisões:
 
-## Passos (provisórios — refinar com o aprendizado da PoC)
+1. **API única `frame(dt)` — sem split simulate/present.** Hosts como o
+   The-Forge dividem o quadro em dois callbacks (`Update(dt)`/`Draw()`), e o
+   `render()` das cenas precisa do command buffer que só existe no `Draw()`.
+   Avaliamos dividir a API (`simulate(dt)` no Update, `present()` no Draw),
+   mas isso devolveria ao adaptador a responsabilidade pela ordem das fases —
+   exatamente o custo 2 que esta task elimina. Fica **um método só**,
+   consumido dentro do `Draw()` do host; o `Update(dt)` do adaptador vira
+   apenas "guardar o dt + capturar input" (a fase 1 provou que a ponte por
+   fila/snapshot — `ForgeUi` — torna isso trivial). Receita documentada:
+
+   ```cpp
+   void Update(float dt) { forgeui::beginInput(...); gDt = dt; }
+   void Draw() {
+       /* boilerplate de GPU + beginDraw(cmd, ...) */
+       if (!gEngine->frame(Seconds{gDt})) requestShutdown();
+       /* submit/present */
+   }
+   ```
+
+2. **`frame()` não toca janela.** No modo hospedado NÃO existe
+   `IWindowManager` — janela/pump/resize são do host (o adaptador da fase 1
+   nem tem window manager). O `EngineManager` aceita construção com
+   `nullptr`; o `run()` (modo próprio) ganha guarda no
+   `m_windowManager->update()` — hoje ele desreferencia sem checar.
+
+3. **Ciclo de vida alinhado ao host**: no modo hospedado `start()` nunca é
+   chamado; o host chama `frame()` até retornar false e invoca `cleanup()`
+   no teardown dele (`Exit()` do IApp). Sem `startHosted()`/`stopHosted()`.
+
+4. **Clamp duplo é inofensivo** (confirmado): o The-Forge clampa o dt dele e
+   o `m_maxFrameTime` aplica por cima — a garantia da engine não depende do
+   host. Documentar. Bônus: no modo hospedado o `ClockNowFn` não é usado
+   (o tempo vem do host), simplificando os testes.
+
+5. **Semântica**: `render()` roda todo quadro, mesmo com 0 updates (quadro
+   rápido que não encheu o acumulador) — comportamento atual do `run()`,
+   base para interpolação futura. Retorno `[[nodiscard]] bool`
+   (false = jogo pediu saída; o shutdown é decisão do host).
+
+## Passos
 
 1. Extrair o corpo do quadro de `run()` para `frame(Seconds)`; acumulador
    vira membro. `run()` reimplementado sobre `frame()` — os testes existentes
@@ -104,8 +134,8 @@ Questões a fechar na execução:
 2. Testes novos do modo hospedado: `frame()` com dt controlado reproduz os
    casos da task 14 (0 updates, N updates com mesmo dt, clamp, resto
    acumulado entre quadros); `frame()` retorna false quando o estado é exit.
-3. Decidir e implementar o tratamento de janela/cleanup no modo hospedado
-   (questões 1-2 acima).
+3. Guarda de `m_windowManager` no `run()` (construção com `nullptr` passa a
+   ser suportada e documentada — modo hospedado não tem janela).
 4. Doxygen + README (seção sobre hosts com inversão de controle).
 5. Atualizar o adaptador da PoC The-Forge para consumir `frame()` no lugar
    das chamadas fase-a-fase (fecha o custo 1 e 2 do problema).
@@ -124,9 +154,9 @@ Questões a fechar na execução:
 
 ## Riscos
 
-Baixo em código (extração de método com testes em cima); o risco real é
-desenhar a API **antes** do caso de uso — por isso a task espera a fase 1 da
-PoC The-Forge validar o formato do host. Não implementar por especulação.
+Baixo: extração de método com testes em cima, e a API foi desenhada DEPOIS do
+caso de uso real (fase 1 da PoC validou o formato do host — ver seção de
+decisões).
 
 ## Relacionado
 
