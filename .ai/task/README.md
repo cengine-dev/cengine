@@ -35,6 +35,11 @@ segurança barata** e **separando "mover" de "redesenhar"**.
 9. **Ciclo 0.4.0 — modo hospedado (15):** `frame(dt)` para hosts com inversão
    de controle (The-Forge). Desenho validado pela fase 1 da PoC The-Forge no
    8Puzzle; adaptador `8PuzzleForge` migrado. ✅ (release 0.4.0 publicado)
+10. **Ciclo 0.5.0 — fim do quadro na janela (16):** `IWindowManager::present()`
+    para o modo próprio fechar/apresentar o quadro depois do `render()` —
+    pré-requisito da fase 2 da PoC The-Forge (task 02 do 8Puzzle, modo
+    biblioteca). *Breaking* pequeno na interface — âncora do bump 0.5.0.
+    **Executar quando a fase 2 chegar ao degrau 2.**
 
 > Regra prática: manter a suíte de testes **verde a cada tarefa**. Nenhuma
 > tarefa deve ser mergeada com testes quebrados.
@@ -72,6 +77,7 @@ Ler antes de executar as tarefas de arquitetura:
 | 13 | [Separar responsabilidades: Router × Repository](13-router-repository-responsibilities.md) | 🔴 Alta (arq.) | Arquitetura |
 | 14 | [Tempo no loop: `update(dt)` separado de `render()`](14-time-in-the-loop.md) | 🔴 Alta (arq.) | Arquitetura |
 | 15 | [Modo hospedado: dirigir o loop de fora (`frame(dt)`)](15-hosted-loop-mode.md) | 🟡 Média | Arquitetura |
+| 16 | [Fim do quadro na janela: `IWindowManager::present()`](16-window-present-hook.md) | 🟡 Média | Arquitetura |
 
 ## Legenda de status
 
