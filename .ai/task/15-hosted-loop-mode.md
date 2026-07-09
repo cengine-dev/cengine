@@ -1,7 +1,8 @@
 # 15 — Modo hospedado: dirigir o loop da engine de fora (`frame(dt)`)
 
-- **Status:** todo (desenho fechado em 2026-07-09 com o aprendizado da fase 1
-  da PoC The-Forge — pronto para executar)
+- **Status:** in-progress (2026-07-09 — engine pronta: `frame()` + `run()`
+  sobre ele + testes + docs; falta migrar o adaptador do 8Puzzle, após o
+  release)
 - **Prioridade:** 🟡 Média
 - **Categoria:** Arquitetura / core
 - **Depende de:** 14 (tempo no loop) ✅; PoC The-Forge fase 1 ✅ (8Puzzle,
@@ -142,12 +143,13 @@ questões abertas e revelou uma nova. Decisões:
 
 ## Critérios de aceite
 
-- [ ] `frame(dt)` público executando o quadro completo com o acumulador de
+- [x] `frame(dt)` público executando o quadro completo com o acumulador de
       fixed timestep interno (mesma garantia da task 14 nos dois modos).
-- [ ] `run()`/`start()` reimplementados sobre `frame()` sem mudança observável
-      (suíte de call-log intacta).
-- [ ] Testes do modo hospedado cobrindo os casos de timestep e a condição de
-      saída.
+- [x] `run()`/`start()` reimplementados sobre `frame()` sem mudança observável
+      (suíte de call-log intacta — 41/41 verdes, incluindo os antigos).
+- [x] Testes do modo hospedado (6 novos): fases em ordem, 0 updates com
+      render, acumulador persistindo ENTRE frames, clamp, retorno false na
+      saída, cleanup sem janela.
 - [ ] Adaptador The-Forge (8Puzzle) consumindo `frame()` — nenhuma lógica de
       fase/acumulador duplicada fora da engine.
 - [ ] Suíte verde (CI 3 jobs).
