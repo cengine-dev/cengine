@@ -149,6 +149,29 @@ with a monotonic clock and consumed in constant `dt` steps — `update` runs
 configurable in the `EngineManager` constructor). Put simulation (animations,
 timers, physics) in `update(dt)`; never measure time inside a scene.
 
+### Hosted mode (`frame(dt)`)
+
+Some platforms invert control: a framework owns the loop and calls *you* back
+each frame (The-Forge's `IApp::Update/Draw`, editors, browsers). For those
+hosts, skip `start()` and drive the engine with **`frame(dt)`** — it runs one
+complete frame (`onEnter` → `input` → `update(fixedDt)` 0..N times → `render`
+→ `onExit`) with the same internal fixed-timestep accumulator, and returns
+`false` when the game routed to the exit state:
+
+```cpp
+// window, pacing and input pump belong to the HOST — no IWindowManager here.
+core::EngineManager engine{nullptr, std::move(gameManager)};
+
+// inside the host's per-frame callback (dt measured by the host):
+if (!engine.frame(core::Seconds{dt})) {
+    // stop calling, shut the host down, and call engine.cleanup() on teardown
+}
+```
+
+`start()` is implemented on top of `frame()`, so the fixed-timestep guarantees
+are identical in both modes. If the host clamps its own `dt`, the engine's
+`maxFrameTime` clamp composes harmlessly on top.
+
 The public headers carry Doxygen comments describing each contract — start from
 [`IScene`](core/include/cengine/core/IScene.hpp) and
 [`IGameManager`](core/include/cengine/core/IGameManager.hpp).

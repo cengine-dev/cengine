@@ -42,36 +42,47 @@ void EngineManager::cleanup() const {
     }
 }
 
+bool EngineManager::frame(Seconds frameTime) {
+    // Teto anti-espiral: um quadro muito lento não pode gerar passos de
+    // simulação suficientes para deixar o próximo quadro ainda mais lento.
+    // (Se o host clampa o dt dele antes, os dois clamps se compõem.)
+    if (frameTime > m_maxFrameTime) {
+        frameTime = m_maxFrameTime;
+    }
+
+    m_gameManager->onEnter();
+    m_gameManager->input();
+
+    // Fixed timestep: consome o tempo acumulado em passos de dt constante
+    // (0..N chamadas por quadro; o resto fica para o próximo quadro).
+    for (m_accumulator += frameTime; m_accumulator >= m_fixedDt; m_accumulator -= m_fixedDt) {
+        m_gameManager->update(m_fixedDt);
+    }
+
+    // O render acontece mesmo num quadro sem passos de update.
+    m_gameManager->render();
+    m_gameManager->onExit();
+
+    return !m_gameManager->shouldExit();
+}
+
 void EngineManager::run() {
+    // O modo próprio é um consumidor de frame(): mede o tempo, atualiza a
+    // janela e delega o quadro — mesma lógica nos dois modos (ver task 15).
     TimePoint previous = m_clockNow();
-    Seconds accumulator{0};
 
     while (m_isRunning) {
         const TimePoint now = m_clockNow();
-        Seconds frameTime = now - previous;
+        const Seconds frameTime = now - previous;
         previous = now;
 
-        // Teto anti-espiral: um quadro muito lento não pode gerar passos de
-        // simulação suficientes para deixar o próximo quadro ainda mais lento.
-        if (frameTime > m_maxFrameTime) {
-            frameTime = m_maxFrameTime;
+        // A janela é da engine apenas no modo próprio; no hospedado ela é do
+        // host — por isso window.update() fica fora de frame().
+        if (m_windowManager) {
+            m_windowManager->update();
         }
 
-        m_windowManager->update();
-
-        m_gameManager->onEnter();
-        m_gameManager->input();
-
-        // Fixed timestep: consome o tempo acumulado em passos de dt constante
-        // (0..N chamadas por quadro; o resto fica para o próximo quadro).
-        for (accumulator += frameTime; accumulator >= m_fixedDt; accumulator -= m_fixedDt) {
-            m_gameManager->update(m_fixedDt);
-        }
-
-        m_gameManager->render();
-        m_gameManager->onExit();
-
-        m_isRunning = !m_gameManager->shouldExit();
+        m_isRunning = frame(frameTime);
     }
     cleanup();
 }

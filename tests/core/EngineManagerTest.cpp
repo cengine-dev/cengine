@@ -162,6 +162,113 @@ TEST_F(EngineManagerFixedTimestepTest, FrameTimeIsClampedToMaxFrameTime) {
     m_engineManager->start();
 }
 
+// ------------------------------------------------------------------
+// Modo hospedado (task 15): o host é dono do loop e chama frame(dt);
+// sem IWindowManager (nullptr) — a janela é do host.
+// ------------------------------------------------------------------
+class EngineManagerHostedModeTest : public ::testing::Test {
+protected:
+    MockGameManager* m_gameManager{nullptr};
+    std::unique_ptr<EngineManager> m_engineManager;
+
+    void makeEngine(const Seconds fixedDt = EngineManager::kDefaultFixedDt,
+                    const Seconds maxFrameTime = EngineManager::kDefaultMaxFrameTime) {
+        auto gameManager = std::make_unique<MockGameManager>();
+        m_gameManager = gameManager.get();
+
+        // Sem window manager: contrato do modo hospedado. O relógio não é
+        // consultado em frame() — o tempo vem por parâmetro.
+        m_engineManager = std::make_unique<EngineManager>(
+            nullptr, std::move(gameManager), fixedDt, maxFrameTime);
+    }
+};
+
+// Um frame() executa a sequência completa de fases, na ordem do modo próprio.
+TEST_F(EngineManagerHostedModeTest, FrameRunsPhasesInOrder) {
+    makeEngine(Seconds{0.010});
+
+    testing::InSequence s;
+    EXPECT_CALL(*m_gameManager, onEnter()).Times(1);
+    EXPECT_CALL(*m_gameManager, input()).Times(1);
+    EXPECT_CALL(*m_gameManager, update(Seconds{0.010})).Times(1);
+    EXPECT_CALL(*m_gameManager, render()).Times(1);
+    EXPECT_CALL(*m_gameManager, onExit()).Times(1);
+    EXPECT_CALL(*m_gameManager, shouldExit()).WillOnce(testing::Return(false));
+
+    EXPECT_TRUE(m_engineManager->frame(Seconds{0.010}));
+}
+
+// Quadro mais curto que o passo fixo: nenhum update, mas o render acontece.
+TEST_F(EngineManagerHostedModeTest, ShortFrameRunsZeroUpdatesButRenders) {
+    makeEngine(Seconds{0.010});
+
+    EXPECT_CALL(*m_gameManager, onEnter()).Times(1);
+    EXPECT_CALL(*m_gameManager, input()).Times(1);
+    EXPECT_CALL(*m_gameManager, update(testing::_)).Times(0);
+    EXPECT_CALL(*m_gameManager, render()).Times(1);
+    EXPECT_CALL(*m_gameManager, onExit()).Times(1);
+    EXPECT_CALL(*m_gameManager, shouldExit()).WillOnce(testing::Return(false));
+
+    EXPECT_TRUE(m_engineManager->frame(Seconds{0.004}));
+}
+
+// Quadro longo: 35 ms com passo de 10 ms -> 3 updates com o MESMO dt; e o
+// RESTO (5 ms) persiste no acumulador ENTRE chamadas de frame() — um segundo
+// quadro de 5 ms completa o passo e gera 1 update.
+TEST_F(EngineManagerHostedModeTest, AccumulatorPersistsAcrossFrames) {
+    constexpr Seconds fixedDt{0.010};
+    makeEngine(fixedDt);
+
+    EXPECT_CALL(*m_gameManager, onEnter()).Times(2);
+    EXPECT_CALL(*m_gameManager, input()).Times(2);
+    EXPECT_CALL(*m_gameManager, render()).Times(2);
+    EXPECT_CALL(*m_gameManager, onExit()).Times(2);
+    EXPECT_CALL(*m_gameManager, shouldExit()).Times(2).WillRepeatedly(testing::Return(false));
+    EXPECT_CALL(*m_gameManager, update(fixedDt)).Times(4); // 3 no 1o quadro + 1 no 2o
+
+    EXPECT_TRUE(m_engineManager->frame(Seconds{0.035}));
+    EXPECT_TRUE(m_engineManager->frame(Seconds{0.005}));
+}
+
+// Teto anti-espiral vale também no modo hospedado: 1 s com teto de 100 ms e
+// passo de 50 ms -> apenas 2 updates.
+TEST_F(EngineManagerHostedModeTest, FrameTimeIsClampedToMaxFrameTime) {
+    constexpr Seconds fixedDt{0.050};
+    makeEngine(fixedDt, Seconds{0.100});
+
+    EXPECT_CALL(*m_gameManager, onEnter()).Times(1);
+    EXPECT_CALL(*m_gameManager, input()).Times(1);
+    EXPECT_CALL(*m_gameManager, render()).Times(1);
+    EXPECT_CALL(*m_gameManager, onExit()).Times(1);
+    EXPECT_CALL(*m_gameManager, shouldExit()).WillOnce(testing::Return(false));
+    EXPECT_CALL(*m_gameManager, update(fixedDt)).Times(2);
+
+    EXPECT_TRUE(m_engineManager->frame(Seconds{1.0}));
+}
+
+// frame() devolve false quando o jogo pediu para sair — o shutdown é do host.
+TEST_F(EngineManagerHostedModeTest, FrameReturnsFalseWhenGameRequestsExit) {
+    makeEngine();
+
+    EXPECT_CALL(*m_gameManager, onEnter()).Times(1);
+    EXPECT_CALL(*m_gameManager, input()).Times(1);
+    EXPECT_CALL(*m_gameManager, render()).Times(1);
+    EXPECT_CALL(*m_gameManager, onExit()).Times(1);
+    EXPECT_CALL(*m_gameManager, shouldExit()).WillOnce(testing::Return(true));
+
+    EXPECT_FALSE(m_engineManager->frame(Seconds{0.0}));
+}
+
+// cleanup() no modo hospedado (sem janela) libera só o jogo, sem desreferenciar
+// o window manager nulo.
+TEST_F(EngineManagerHostedModeTest, CleanupWithoutWindowManagerIsSafe) {
+    makeEngine();
+
+    EXPECT_CALL(*m_gameManager, cleanup()).Times(1);
+
+    m_engineManager->cleanup();
+}
+
 // Configuração inválida deve falhar na construção, não travar o loop.
 TEST(EngineManagerConstructionTest, RejectsNonPositiveFixedDt) {
     EXPECT_THROW(EngineManager(std::make_unique<MockWindowManager>(),
