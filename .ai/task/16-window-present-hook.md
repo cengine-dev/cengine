@@ -1,8 +1,8 @@
 # 16 — Fim do quadro na janela: `IWindowManager::present()`
 
-- **Status:** in-progress (implementação em 2026-07-10 —
-  `feature/16-window-present-hook`; falta release 0.5.0 + migração do
-  8Puzzle + validação no degrau 2)
+- **Status:** in-progress (entregue na **0.5.0** em 2026-07-10 — PRs #18 e
+  #19, tag criada, 8Puzzle migrado; falta só a validação real no degrau 2
+  da task 02 do 8Puzzle)
 - **Prioridade:** 🟡 Média (sobe com a fase 2)
 - **Categoria:** Arquitetura / core
 - **Depende de:** 15 ✅ (modo hospedado). Consumidor real: 8Puzzle task 02
@@ -94,11 +94,12 @@ No `EngineManager`:
 
 ## Critérios de aceite
 
-- [ ] `IWindowManager::present()` chamado ao fim de cada iteração do modo
+- [x] `IWindowManager::present()` chamado ao fim de cada iteração do modo
       próprio; `frame(dt)` (modo hospedado) segue sem tocar janela.
-- [ ] Suíte atualizada e verde (ordem update → fases → present coberta por
-      call-log).
-- [ ] Consumidores migrados (terminal/FTXUI) sem regressão.
+- [x] Suíte atualizada e verde (ordem update → fases → present coberta por
+      call-log) — 41/41 em 2026-07-10.
+- [x] Consumidores migrados (terminal/FTXUI com `present()` vazio) sem
+      regressão — 8Puzzle em cengine 0.5.0, testes e builds verdes.
 - [ ] Consumido de verdade pelo degrau 2 da fase 2 do 8Puzzle.
 
 ## Riscos
