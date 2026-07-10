@@ -39,7 +39,8 @@ segurança barata** e **separando "mover" de "redesenhar"**.
     para o modo próprio fechar/apresentar o quadro depois do `render()` —
     pré-requisito da fase 2 da PoC The-Forge (task 02 do 8Puzzle, modo
     biblioteca). *Breaking* pequeno na interface — âncora do bump 0.5.0.
-    **Executar quando a fase 2 chegar ao degrau 2.**
+    ✅ (release 0.5.0 publicado; validado pelo degrau 2 da fase 2 —
+    `TheForgeWindowManager` com o quadro de GPU no par `update()`/`present()`)
 
 > Regra prática: manter a suíte de testes **verde a cada tarefa**. Nenhuma
 > tarefa deve ser mergeada com testes quebrados.

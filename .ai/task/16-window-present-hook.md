@@ -1,8 +1,12 @@
 # 16 — Fim do quadro na janela: `IWindowManager::present()`
 
-- **Status:** in-progress (entregue na **0.5.0** em 2026-07-10 — PRs #18 e
-  #19, tag criada, 8Puzzle migrado; falta só a validação real no degrau 2
-  da task 02 do 8Puzzle)
+- **Status:** ✅ done (2026-07-10) — entregue na **0.5.0** (PRs #18 e #19) e
+  validada de verdade pelo degrau 2 da task 02 do 8Puzzle: o
+  `TheForgeWindowManager` mapeia o quadro de GPU 1:1 no par
+  `update()`/`present()` (acquire/beginCmd de um lado, endCmd/submit/
+  queuePresent do outro), com o command buffer aberto entre os dois para as
+  cenas desenharem. A ordem `present()` depois do `onExit()` (inclusive no
+  último quadro) se confirmou correta no caso real.
 - **Prioridade:** 🟡 Média (sobe com a fase 2)
 - **Categoria:** Arquitetura / core
 - **Depende de:** 15 ✅ (modo hospedado). Consumidor real: 8Puzzle task 02
@@ -100,7 +104,10 @@ No `EngineManager`:
       call-log) — 41/41 em 2026-07-10.
 - [x] Consumidores migrados (terminal/FTXUI com `present()` vazio) sem
       regressão — 8Puzzle em cengine 0.5.0, testes e builds verdes.
-- [ ] Consumido de verdade pelo degrau 2 da fase 2 do 8Puzzle.
+- [x] Consumido de verdade pelo degrau 2 da fase 2 do 8Puzzle — validado em
+      runtime em 2026-07-10 (fixed timestep, navegação entre cenas, resize
+      recriando swapchain, encerramento limpo com o último quadro
+      apresentado).
 
 ## Riscos
 
