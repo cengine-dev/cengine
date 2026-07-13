@@ -5,6 +5,69 @@ All notable changes to CEngine are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-13
+
+Explicit construction modes (tasks 21 and 19 of the
+[improvement plan](.ai/task/README.md)): no more `nullptr` in the public API.
+The engine's two modes — owned (`start()`) and hosted (`frame(dt)`) — are now
+expressed by named factories at the call site, and the navigation-facade
+mechanic repeated by the consumer games ships as an opt-in `FlowRouter<TFlow>`
+helper in the routing module.
+
+> **Breaking release.** The `EngineManager` constructor left the public API —
+> construction goes through `EngineManager::owned(...)` or
+> `EngineManager::hosted(...)`. See _Migrating from 0.5.0_ below.
+>
+> **Consumer note:** 8puzzle and spaceinvaders are **parked at 0.5.0** as
+> living documentation (ADR 0003) and are not migrated; the asteroids game is
+> the validating consumer of this release.
+
+### Changed
+
+- **`EngineManager` is constructed by named factories** (task 21, option B of
+  the task — decision recorded there):
+  - `EngineManager::owned(windowManager, gameManager, ...)` — engine-owned
+    mode: the engine owns the window and the loop (`start()`). Throws
+    `std::invalid_argument` on a null window or game manager.
+  - `EngineManager::hosted(gameManager, ...)` — hosted mode: the host owns
+    window, message pump and pacing, and drives the engine with `frame(dt)`.
+    Takes no window at all; throws `std::invalid_argument` on a null game
+    manager.
+  - `start()` on a `hosted()` engine throws `std::logic_error` with a clear
+    message (previously: silent undefined behavior via the null window).
+  - The `windowManager == nullptr` convention of 0.4.0 is gone from the public
+    API; internally the mode guarantees are established at construction, so
+    the per-call null branches in the loop were removed.
+
+### Added
+
+- **`cengine::routing::FlowRouter<TFlow>`** (task 19, header-only, opt-in):
+  the mechanic of the domain navigation facade — holds the `IRouter`,
+  `current()` returns the current state downcast to the game's flow type
+  (throwing `std::runtime_error` on a foreign state), and `setNextState()`
+  delegates to the two-phase `requestState()`. The game inherits it and
+  writes only its vocabulary (`menu()`, `gameOver()`, ...). Promotion passes
+  the anti-deposit filter (ADR 0002): pure mechanism, duplicated in two real
+  consumers, tested in-engine.
+- **Construction/mode tests**: factories reject null collaborators and
+  non-positive timing; `start()` on a hosted engine throws; `FlowRouter`
+  covered for cast, foreign-state error, delegation and the facade pattern.
+
+### Migrating from 0.5.0
+
+- Engine-owned mode: replace the constructor with the factory —
+  ```cpp
+  auto engine = cengine::core::EngineManager::owned(
+      std::move(windowManager), std::move(gameManager));
+  ```
+- Hosted mode: replace `EngineManager{nullptr, game}` with —
+  ```cpp
+  auto engine = cengine::core::EngineManager::hosted(std::move(gameManager));
+  ```
+- Optionally, replace a hand-rolled `GameRouter` facade mechanic with
+  `cengine::routing::FlowRouter<YourFlow>` and keep only the vocabulary
+  methods.
+
 ## [0.5.0] - 2026-07-10
 
 Frame-end hook on the window (task 16 of the
@@ -279,6 +342,9 @@ routing as an **opt-in module**.
 - Initial single-target (`cengine_lib`) engine: game loop, scene/state
   management, and in-memory router.
 
+[0.6.0]: https://github.com/mrmarmitt/cengine/compare/0.5.0...0.6.0
+[0.5.0]: https://github.com/mrmarmitt/cengine/compare/0.4.0...0.5.0
+[0.4.0]: https://github.com/mrmarmitt/cengine/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/mrmarmitt/cengine/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/mrmarmitt/cengine/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/mrmarmitt/cengine/compare/0.0.1...0.1.0
