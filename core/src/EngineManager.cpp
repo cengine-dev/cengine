@@ -5,6 +5,28 @@
 
 namespace cengine::core {
 
+EngineManager EngineManager::owned(std::unique_ptr<IWindowManager> windowManager,
+                                   std::unique_ptr<IGameManager> gameManager,
+                                   const Seconds fixedDt,
+                                   const Seconds maxFrameTime,
+                                   ClockNowFn clockNow) {
+    if (!windowManager) {
+        throw std::invalid_argument("EngineManager::owned: windowManager must not be null "
+                                    "(no engine window? use EngineManager::hosted)");
+    }
+    return EngineManager{std::move(windowManager), std::move(gameManager),
+                         fixedDt, maxFrameTime, std::move(clockNow)};
+}
+
+EngineManager EngineManager::hosted(std::unique_ptr<IGameManager> gameManager,
+                                    const Seconds fixedDt,
+                                    const Seconds maxFrameTime) {
+    // Sem janela por desenho: o host é dono de janela/pump/pacing. O relógio
+    // não é consultado em frame() — o tempo vem por parâmetro.
+    return EngineManager{nullptr, std::move(gameManager),
+                         fixedDt, maxFrameTime, Clock::now};
+}
+
 EngineManager::EngineManager(std::unique_ptr<IWindowManager> windowManager,
                              std::unique_ptr<IGameManager> gameManager,
                              const Seconds fixedDt,
@@ -15,6 +37,9 @@ EngineManager::EngineManager(std::unique_ptr<IWindowManager> windowManager,
                                                     m_maxFrameTime(maxFrameTime),
                                                     m_clockNow(std::move(clockNow)),
                                                     m_isRunning(false) {
+    if (!m_gameManager) {
+        throw std::invalid_argument("EngineManager: gameManager must not be null");
+    }
     if (m_fixedDt <= Seconds{0}) {
         throw std::invalid_argument("EngineManager: fixedDt must be positive");
     }
@@ -24,19 +49,21 @@ EngineManager::EngineManager(std::unique_ptr<IWindowManager> windowManager,
 }
 
 void EngineManager::start() {
-    if (m_windowManager) {
-        m_windowManager->init();
+    if (!m_windowManager) {
+        throw std::logic_error("EngineManager: start() is the owned mode; a hosted() engine "
+                               "is driven by the host via frame(dt)");
     }
+    m_windowManager->init();
 
     m_isRunning = true;
     run();
 }
 
 void EngineManager::cleanup() const {
-    if (m_gameManager) {
-        m_gameManager->cleanup();
-    }
+    m_gameManager->cleanup();
 
+    // A janela existe apenas no modo próprio; numa engine hosted() o
+    // teardown de janela é do host.
     if (m_windowManager) {
         m_windowManager->cleanup();
     }
@@ -69,6 +96,7 @@ bool EngineManager::frame(Seconds frameTime) {
 void EngineManager::run() {
     // O modo próprio é um consumidor de frame(): mede o tempo, atualiza a
     // janela e delega o quadro — mesma lógica nos dois modos (ver task 15).
+    // Só start() chega aqui, e start() garante a janela (modo próprio).
     TimePoint previous = m_clockNow();
 
     while (m_isRunning) {
@@ -80,15 +108,11 @@ void EngineManager::run() {
         // host — por isso update()/present() ficam fora de frame(). present()
         // roda mesmo no último quadro (shouldExit): o que foi desenhado é
         // apresentado antes do cleanup.
-        if (m_windowManager) {
-            m_windowManager->update();
-        }
+        m_windowManager->update();
 
         m_isRunning = frame(frameTime);
 
-        if (m_windowManager) {
-            m_windowManager->present();
-        }
+        m_windowManager->present();
     }
     cleanup();
 }

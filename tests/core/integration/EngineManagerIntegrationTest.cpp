@@ -33,13 +33,13 @@ protected:
         // Inicializa o EngineManager com as implementações "fake" e relógio
         // CONGELADO (frameTime = 0 -> nenhum passo de update); a contagem de
         // passos é coberta pelo teste de fixed timestep abaixo.
-        m_engineManager = std::make_unique<EngineManager>(
+        m_engineManager = std::make_unique<EngineManager>(EngineManager::owned(
             std::move(m_fakeWindowManager),
             std::move(m_fakeGameManager),
             EngineManager::kDefaultFixedDt,
             EngineManager::kDefaultMaxFrameTime,
             [] { return EngineManager::TimePoint{}; }
-        );
+        ));
     }
 };
 
@@ -113,7 +113,7 @@ TEST(EngineManagerFixedTimestepIntegrationTest, AccumulatorCarriesRemainderAcros
     constexpr Seconds kFixedDt{0.010};
     auto now = std::make_shared<EngineManager::TimePoint>();
 
-    EngineManager engineManager{
+    auto engineManager = EngineManager::owned(
         std::move(fakeWindowManager),
         std::move(fakeGameManager),
         kFixedDt,
@@ -121,7 +121,7 @@ TEST(EngineManagerFixedTimestepIntegrationTest, AccumulatorCarriesRemainderAcros
         [now] {
             *now += std::chrono::milliseconds{25};
             return *now;
-        }};
+        });
 
     engineManager.start();
 

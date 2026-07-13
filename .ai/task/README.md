@@ -41,14 +41,16 @@ segurança barata** e **separando "mover" de "redesenhar"**.
     biblioteca). *Breaking* pequeno na interface — âncora do bump 0.5.0.
     ✅ (release 0.5.0 publicado; validado pelo degrau 2 da fase 2 —
     `TheForgeWindowManager` com o quadro de GPU no par `update()`/`present()`)
-11. **Ciclo 0.6.0 (proposto) — janela obrigatória (21) + FlowRouter de
-    carona (19):** remover a hipótese do `nullptr` no `EngineManager`
-    (*breaking*, âncora do bump) e extrair a mecânica da fachada de
-    navegação (opt-in, não-breaking) na mesma visita. Aceite real: migrar
-    os consumidores — 8puzzle (fases 1 e 2) e spaceinvaders (task 02
-    daquele repo, modo próprio) — apagando `nullptr` e a fachada duplicada
-    dos call sites. A task 20 segue **estacionada** (gate não disparou —
-    ver ADR 0002).
+11. **Ciclo 0.6.0 — janela obrigatória (21) + FlowRouter de carona (19):**
+    remover a hipótese do `nullptr` no `EngineManager` (*breaking*, âncora
+    do bump — saiu pela **opção B**: factories `owned()`/`hosted()`) e
+    extrair a mecânica da fachada de navegação (`FlowRouter<TFlow>`,
+    opt-in) na mesma visita. O aceite mudou em relação ao proposto:
+    **8puzzle e spaceinvaders foram estacionados na 0.5.0 como documentação
+    viva (ADR 0003)** — quem valida o novo desenho é a suíte da cengine e o
+    asteroids, que nasce como terceiro consumidor. A task 20 segue
+    **estacionada** (gate não disparou — ver ADR 0002).
+    ✅ (implementado com a suíte 49/49 verde; falta commit + tag 0.6.0)
 
 > Regra prática: manter a suíte de testes **verde a cada tarefa**. Nenhuma
 > tarefa deve ser mergeada com testes quebrados.
@@ -69,6 +71,10 @@ Ler antes de executar as tarefas de arquitetura:
   código só entra na engine se for mecanismo puro (sem vocabulário de jogo),
   com ≥ 2 consumidores reais e testável na própria cengine. Governa as
   tarefas 17–21 e toda promoção futura.
+- [ADR 0003 — Consumidores estacionados como documentação viva](../decisions/0003-consumidores-estacionados-documentacao-viva.md):
+  8puzzle e spaceinvaders ficam pinados na cengine 0.5.0 e saem dos
+  critérios de aceite; o asteroids é o consumidor de validação do 0.6.0 em
+  diante.
 
 ## Índice
 
@@ -93,9 +99,9 @@ Ler antes de executar as tarefas de arquitetura:
 | 16 | [Fim do quadro na janela: `IWindowManager::present()`](16-window-present-hook.md) | 🟡 Média | Arquitetura |
 | 17 | [Colisão 2D: detecção AABB opt-in](17-collision2d-detection.md) | 🟢 Baixa/Média | Arquitetura |
 | 18 | [Scene stack e overlays](18-scene-stack-overlays.md) | 🟢 Baixa/Média | Arquitetura |
-| 19 | [FlowRouter: extrair a mecânica da fachada de navegação](19-flow-router-facade.md) | 🟢 Baixa (carona) | Arquitetura |
+| 19 | [FlowRouter: extrair a mecânica da fachada de navegação](19-flow-router-facade.md) ✅ 0.6.0 | 🟢 Baixa (carona) | Arquitetura |
 | 20 | [Vocabulário de input como porta](20-input-vocabulary-port.md) | 🟢 Baixa (estacionada) | Arquitetura |
-| 21 | [`IWindowManager` obrigatório: remover a hipótese do `nullptr`](21-window-manager-mandatory.md) | 🟡 Média (breaking, 0.6.0) | Arquitetura |
+| 21 | [`IWindowManager` obrigatório: remover a hipótese do `nullptr`](21-window-manager-mandatory.md) ✅ 0.6.0 | 🟡 Média (breaking, 0.6.0) | Arquitetura |
 
 ## Legenda de status
 

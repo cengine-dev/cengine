@@ -13,17 +13,18 @@ namespace cengine::core {
 /**
  * @brief O coração da engine: o game loop, com *fixed timestep*.
  *
- * É a única classe concreta do `core`. Recebe por injeção de dependência um
- * `IWindowManager` (a plataforma gráfica) e um `IGameManager` (as regras/telas
- * do jogo), assumindo posse de ambos, e executa o quadro do jogo em um de dois
- * modos:
+ * É a única classe concreta do `core`. Nasce por uma de duas factories
+ * nomeadas — o modo é decidido na construção e expresso no call site
+ * (ver .ai/task/21):
  *
- * - **Modo próprio**: `start()` bloqueia e dirige o loop até o jogo pedir
- *   para sair (terminal, FTXUI — a engine é dona do loop).
- * - **Modo hospedado**: um host com inversão de controle (The-Forge, editor,
- *   browser) é dono do loop e chama `frame(dt)` uma vez por quadro. Nesse
- *   modo NÃO há janela da engine (`windowManager == nullptr`): janela, pump
- *   de mensagens e pacing são do host. Ver .ai/task/15.
+ * - **`owned(window, game)` — modo próprio**: a engine é dona da janela e do
+ *   loop; `start()` bloqueia e dirige até o jogo pedir para sair (terminal,
+ *   FTXUI, The-Forge como biblioteca).
+ * - **`hosted(game)` — modo hospedado**: um host com inversão de controle
+ *   (The-Forge `IApp`, editor, browser) é dono do loop e chama `frame(dt)`
+ *   uma vez por quadro. Não há janela da engine: janela, pump de mensagens e
+ *   pacing são do host — `start()` lança `std::logic_error` nesse modo.
+ *   Ver .ai/task/15.
  *
  * Cada quadro executa: `game.onEnter()` → `game.input()` → `game.update(dt)`
  * (0..N vezes) → `game.render()` → `game.onExit()`. No modo próprio o quadro
@@ -53,14 +54,14 @@ namespace cengine::core {
  *
  * @code
  * // modo próprio: a engine dirige
- * cengine::core::EngineManager engine{
+ * auto engine = cengine::core::EngineManager::owned(
  *     std::make_unique<MyWindowManager>(),
- *     std::make_unique<MyGameManager>()
- * };
+ *     std::make_unique<MyGameManager>());
  * engine.start(); // bloqueia até o jogo pedir para sair
  *
  * // modo hospedado: o host dirige (ex.: dentro do Draw() de um IApp)
- * cengine::core::EngineManager hosted{nullptr, std::make_unique<MyGameManager>()};
+ * auto hosted = cengine::core::EngineManager::hosted(
+ *     std::make_unique<MyGameManager>());
  * // ... por quadro do host:
  * if (!hosted.frame(dtDoHost)) {
  *     // o host encerra o loop dele e chama hosted.cleanup() no teardown
@@ -77,28 +78,50 @@ public:
     static constexpr Seconds kDefaultMaxFrameTime{0.25};
 
     /**
+     * @brief Modo próprio: a engine é dona da janela e do loop (`start()`).
+     *
      * @param windowManager plataforma gráfica (posse transferida à engine).
-     *                      Pode ser nullptr no modo hospedado — a janela é do
-     *                      host; nesse caso `start()` não deve ser usado.
      * @param gameManager   regras/telas do jogo (posse transferida à engine).
      * @param fixedDt       passo fixo da simulação (> 0; default 1/60 s).
      * @param maxFrameTime  teto do tempo de quadro acumulável (> 0; default
      *                      250 ms) — proteção contra a espiral da morte.
      * @param clockNow      fonte de tempo (default: relógio monotônico).
-     * @throws std::invalid_argument se @p fixedDt ou @p maxFrameTime não for
-     *         positivo.
+     * @throws std::invalid_argument se @p windowManager ou @p gameManager for
+     *         nulo, ou se @p fixedDt ou @p maxFrameTime não for positivo.
      */
-    EngineManager(
+    static EngineManager owned(
         std::unique_ptr<IWindowManager> windowManager,
         std::unique_ptr<IGameManager> gameManager,
         Seconds fixedDt = kDefaultFixedDt,
         Seconds maxFrameTime = kDefaultMaxFrameTime,
         ClockNowFn clockNow = Clock::now);
 
+    /**
+     * @brief Modo hospedado: o host é dono da janela e do loop (`frame(dt)`).
+     *
+     * Não há janela do lado da engine e a fonte de tempo não é consultada —
+     * o tempo de quadro vem por parâmetro em `frame()`. `start()` lança
+     * `std::logic_error` em uma engine construída por esta factory.
+     *
+     * @param gameManager   regras/telas do jogo (posse transferida à engine).
+     * @param fixedDt       passo fixo da simulação (> 0; default 1/60 s).
+     * @param maxFrameTime  teto do tempo de quadro acumulável (> 0; default
+     *                      250 ms).
+     * @throws std::invalid_argument se @p gameManager for nulo, ou se
+     *         @p fixedDt ou @p maxFrameTime não for positivo.
+     */
+    static EngineManager hosted(
+        std::unique_ptr<IGameManager> gameManager,
+        Seconds fixedDt = kDefaultFixedDt,
+        Seconds maxFrameTime = kDefaultMaxFrameTime);
+
+    EngineManager(EngineManager&&) noexcept = default;
+    EngineManager& operator=(EngineManager&&) noexcept = default;
+
     ~EngineManager() = default;
 
     /// Inicializa a janela e entra no game loop. Bloqueia até `shouldExit()`.
-    /// Modo próprio — requer `windowManager` (não use com nullptr).
+    /// Modo próprio — em uma engine `hosted()` lança `std::logic_error`.
     void start();
 
     /**
@@ -124,6 +147,16 @@ public:
     void cleanup() const;
 
 private:
+    // Só as factories constroem: `owned()` garante janela não nula; `hosted()`
+    // é o ÚNICO caminho sem janela (m_windowManager nulo é detalhe interno,
+    // nunca API pública — ver .ai/task/21).
+    EngineManager(
+        std::unique_ptr<IWindowManager> windowManager,
+        std::unique_ptr<IGameManager> gameManager,
+        Seconds fixedDt,
+        Seconds maxFrameTime,
+        ClockNowFn clockNow);
+
     void run();
 
     std::unique_ptr<IWindowManager> m_windowManager;

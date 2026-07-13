@@ -125,10 +125,10 @@ int main() {
     auto gameManager = std::make_unique<routing::GameManager>(router);
 
     // 3. Run the loop (you provide MyWindowManager : cengine::core::IWindowManager).
-    core::EngineManager engine{
+    //    owned() = engine-owned mode: the engine owns the window and the loop.
+    auto engine = core::EngineManager::owned(
         std::make_unique<MyWindowManager>(),
-        std::move(gameManager)
-    };
+        std::move(gameManager));
     engine.start(); // blocks until a scene routes to the exit state
     return 0;
 }
@@ -159,7 +159,7 @@ Platforms with no present concept (a plain terminal) implement it empty.
 The loop uses a **fixed timestep** ("fix your timestep"): frame time is measured
 with a monotonic clock and consumed in constant `dt` steps — `update` runs
 **0..N times per frame, always with the same `dt`** (default 1/60 s,
-configurable in the `EngineManager` constructor). Put simulation (animations,
+configurable in the `owned()`/`hosted()` factories). Put simulation (animations,
 timers, physics) in `update(dt)`; never measure time inside a scene.
 
 ### Hosted mode (`frame(dt)`)
@@ -172,8 +172,8 @@ complete frame (`onEnter` → `input` → `update(fixedDt)` 0..N times → `rend
 `false` when the game routed to the exit state:
 
 ```cpp
-// window, pacing and input pump belong to the HOST — no IWindowManager here.
-core::EngineManager engine{nullptr, std::move(gameManager)};
+// window, pacing and input pump belong to the HOST — hosted() takes no window.
+auto engine = core::EngineManager::hosted(std::move(gameManager));
 
 // inside the host's per-frame callback (dt measured by the host):
 if (!engine.frame(core::Seconds{dt})) {
@@ -182,7 +182,9 @@ if (!engine.frame(core::Seconds{dt})) {
 ```
 
 `start()` is implemented on top of `frame()`, so the fixed-timestep guarantees
-are identical in both modes. If the host clamps its own `dt`, the engine's
+are identical in both modes. The mode is decided at construction: calling
+`start()` on a `hosted()` engine throws `std::logic_error`, and neither factory
+accepts null collaborators. If the host clamps its own `dt`, the engine's
 `maxFrameTime` clamp composes harmlessly on top.
 
 The public headers carry Doxygen comments describing each contract — start from

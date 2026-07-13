@@ -36,6 +36,7 @@ target_link_libraries(cengine_tests
 if(CENGINE_BUILD_ROUTING)
   target_sources(cengine_tests
     PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/routing/FlowRouterTest.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/routing/GameManagerTest.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/routing/RouterInMemoryTest.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/routing/SceneRepositoryTest.cpp"

@@ -40,12 +40,12 @@ protected:
         // Relógio CONGELADO: frameTime = 0 em todo quadro -> nenhum passo de
         // update; os testes de contagem de passos ficam nas suítes de fixed
         // timestep abaixo.
-        m_engineManager = std::make_unique<EngineManager>(
+        m_engineManager = std::make_unique<EngineManager>(EngineManager::owned(
             std::move(m_mockWindowManager),
             std::move(m_mockGameManager),
             EngineManager::kDefaultFixedDt,
             EngineManager::kDefaultMaxFrameTime,
-            [] { return EngineManager::TimePoint{}; });
+            [] { return EngineManager::TimePoint{}; }));
     }
 };
 
@@ -111,7 +111,7 @@ protected:
         m_gameManager = gameManager.get();
 
         auto now = std::make_shared<EngineManager::TimePoint>();
-        m_engineManager = std::make_unique<EngineManager>(
+        m_engineManager = std::make_unique<EngineManager>(EngineManager::owned(
             std::move(windowManager),
             std::move(gameManager),
             fixedDt,
@@ -119,7 +119,7 @@ protected:
             [now, clockStep] {
                 *now += std::chrono::duration_cast<EngineManager::Clock::duration>(clockStep);
                 return *now;
-            });
+            }));
 
         // Fora do foco destes testes: um quadro só, sem InSequence.
         EXPECT_CALL(*m_windowManager, init()).Times(1);
@@ -168,8 +168,8 @@ TEST_F(EngineManagerFixedTimestepTest, FrameTimeIsClampedToMaxFrameTime) {
 }
 
 // ------------------------------------------------------------------
-// Modo hospedado (task 15): o host é dono do loop e chama frame(dt);
-// sem IWindowManager (nullptr) — a janela é do host.
+// Modo hospedado (tasks 15 e 21): o host é dono do loop e chama frame(dt);
+// a engine nasce por hosted() — sem janela da engine, por construção.
 // ------------------------------------------------------------------
 class EngineManagerHostedModeTest : public ::testing::Test {
 protected:
@@ -181,10 +181,10 @@ protected:
         auto gameManager = std::make_unique<MockGameManager>();
         m_gameManager = gameManager.get();
 
-        // Sem window manager: contrato do modo hospedado. O relógio não é
-        // consultado em frame() — o tempo vem por parâmetro.
+        // Contrato do modo hospedado: sem janela do lado da engine e o
+        // relógio não é consultado em frame() — o tempo vem por parâmetro.
         m_engineManager = std::make_unique<EngineManager>(
-            nullptr, std::move(gameManager), fixedDt, maxFrameTime);
+            EngineManager::hosted(std::move(gameManager), fixedDt, maxFrameTime));
     }
 };
 
@@ -276,13 +276,35 @@ TEST_F(EngineManagerHostedModeTest, CleanupWithoutWindowManagerIsSafe) {
 
 // Configuração inválida deve falhar na construção, não travar o loop.
 TEST(EngineManagerConstructionTest, RejectsNonPositiveFixedDt) {
-    EXPECT_THROW(EngineManager(std::make_unique<MockWindowManager>(),
-                               std::make_unique<MockGameManager>(),
-                               Seconds{0}),
+    EXPECT_THROW(EngineManager::owned(std::make_unique<MockWindowManager>(),
+                                      std::make_unique<MockGameManager>(),
+                                      Seconds{0}),
                  std::invalid_argument);
-    EXPECT_THROW(EngineManager(std::make_unique<MockWindowManager>(),
-                               std::make_unique<MockGameManager>(),
-                               EngineManager::kDefaultFixedDt,
-                               Seconds{-1.0}),
+    EXPECT_THROW(EngineManager::owned(std::make_unique<MockWindowManager>(),
+                                      std::make_unique<MockGameManager>(),
+                                      EngineManager::kDefaultFixedDt,
+                                      Seconds{-1.0}),
                  std::invalid_argument);
+    EXPECT_THROW(EngineManager::hosted(std::make_unique<MockGameManager>(), Seconds{0}),
+                 std::invalid_argument);
+}
+
+// Task 21: nenhum nullptr na API pública — as factories exigem os
+// colaboradores do seu modo.
+TEST(EngineManagerConstructionTest, OwnedRejectsNullCollaborators) {
+    EXPECT_THROW(EngineManager::owned(nullptr, std::make_unique<MockGameManager>()),
+                 std::invalid_argument);
+    EXPECT_THROW(EngineManager::owned(std::make_unique<MockWindowManager>(), nullptr),
+                 std::invalid_argument);
+}
+
+TEST(EngineManagerConstructionTest, HostedRejectsNullGameManager) {
+    EXPECT_THROW(EngineManager::hosted(nullptr), std::invalid_argument);
+}
+
+// Task 21: o erro de modo falha alto e claro — start() é do modo próprio;
+// uma engine hosted() é dirigida pelo host via frame(dt).
+TEST(EngineManagerConstructionTest, StartOnHostedEngineThrows) {
+    auto engine = EngineManager::hosted(std::make_unique<MockGameManager>());
+    EXPECT_THROW(engine.start(), std::logic_error);
 }

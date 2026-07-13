@@ -1,11 +1,13 @@
 # 19 - FlowRouter: extrair a mecanica da fachada de navegacao
 
-- **Status:** todo
+- **Status:** done (0.6.0 — de carona na task 21; consumidores estacionados,
+  ver ADR 0003)
 - **Prioridade:** baixa - micro-task; executar de carona na proxima mexida no
   modulo `routing` (ex.: task 17 ou 18), nao abrir ciclo proprio para ela.
 - **Categoria:** Arquitetura / routing
 - **Depende de:** 13 done (Router x Repository). Consumidores reais: 8puzzle
-  e spaceinvaders (dois `GameRouter` quase identicos).
+  e spaceinvaders (dois `GameRouter` quase identicos — congelados na 0.5.0
+  como evidencia; o asteroids nasce consumindo o helper).
 - **Breaking:** nao - helper novo opt-in; os jogos migram quando quiserem.
 
 ## Contexto
@@ -83,9 +85,14 @@ public:
 
 ## Criterios de Aceite
 
-- [ ] `FlowRouter<TFlow>` com testes na suite da cengine.
-- [ ] 8puzzle e spaceinvaders consumindo e sem a mecanica duplicada.
-- [ ] Nenhum vocabulario de jogo dentro da cengine.
+- [x] `FlowRouter<TFlow>` com testes na suite da cengine (cast valido, cast
+      invalido lanca, delegacao de setNextState, router nulo rejeitado e o
+      padrao de fachada exercitado de ponta a ponta).
+- [x] ~~8puzzle e spaceinvaders consumindo e sem a mecanica duplicada~~ —
+      substituido pelo ADR 0003: os dois GameRouter congelados na 0.5.0 sao
+      a evidencia de duplicacao; o asteroids nasce consumindo o helper.
+- [x] Nenhum vocabulario de jogo dentro da cengine (o helper e so mecanica;
+      o vocabulario continua no jogo, que herda de `FlowRouter<TFlow>`).
 
 ## Riscos
 

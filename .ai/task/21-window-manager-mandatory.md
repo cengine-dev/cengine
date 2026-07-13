@@ -1,15 +1,28 @@
 # 21 - IWindowManager obrigatorio: remover a hipotese do nullptr
 
-- **Status:** todo
+- **Status:** done (0.6.0 — opcao B; consumidores estacionados, ver ADR 0003)
 - **Prioridade:** media - os dois jogos consumidores ja dominam o modo
   proprio (8puzzle fase 2 e spaceinvaders task 02); o nullptr deixou de ser
   o caminho principal e virou caso especial mal expresso na API.
 - **Categoria:** Arquitetura / core
 - **Depende de:** 15 done (modo hospedado), 16 done (present no fim do
-  quadro). Consumidores a migrar: 8puzzle (alvos fase 1 e fase 2) e
-  spaceinvaders (ja em modo proprio).
+  quadro). Consumidores a migrar: ~~8puzzle (alvos fase 1 e fase 2) e
+  spaceinvaders (ja em modo proprio)~~ — estacionados na 0.5.0 por decisao
+  do ADR 0003; o asteroids valida o novo desenho.
 - **Breaking:** sim - muda o construtor do `EngineManager`; ancora de um
   bump de versao (0.6.0).
+
+## Decisao (registrada em 2026-07-13)
+
+**Opcao B — modos separados por construcao.** Factories nomeadas
+`EngineManager::owned(window, game, ...)` e `EngineManager::hosted(game, ...)`;
+o construtor saiu da API publica. Racional contra a opcao A: o null-object
+(`HostedWindowManager`) preservava a API, mas deixava `start()` numa config
+hospedada rodando em silencio (loop girando sem ninguem apresentar). A B
+conta a verdade no tipo — o modo hospedado NAO tem janela do lado da engine
+e `start()` nele lanca `std::logic_error` com mensagem clara. O custo (mudar
+a forma de construir nos call sites do modo proprio) foi neutralizado pela
+decisao de estacionar os consumidores (ADR 0003).
 
 ## Contexto
 
@@ -87,12 +100,15 @@ dois jogos.
 
 ## Criterios de Aceite
 
-- [ ] API publica sem nullptr: construtor/factories exigem os dois
-      colaboradores.
-- [ ] `start()` com configuracao hospedada falha de forma clara (ou nao
-      compila, na opcao B).
-- [ ] Testes cobrem os dois modos e a rejeicao de configuracao invalida.
-- [ ] 8puzzle e spaceinvaders migrados sem nullptr nos call sites.
+- [x] API publica sem nullptr: construtor/factories exigem os dois
+      colaboradores (`owned`/`hosted` lancam `std::invalid_argument`).
+- [x] `start()` com configuracao hospedada falha de forma clara
+      (`std::logic_error` com mensagem apontando `frame(dt)`).
+- [x] Testes cobrem os dois modos e a rejeicao de configuracao invalida
+      (suite 49/49 verde, build sem warnings).
+- [x] ~~8puzzle e spaceinvaders migrados sem nullptr nos call sites~~ —
+      substituido pelo ADR 0003: jogos estacionados na 0.5.0; o asteroids
+      nasce nos factories como consumidor de validacao.
 
 ## Riscos
 
