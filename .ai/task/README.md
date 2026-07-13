@@ -83,6 +83,7 @@ Ler antes de executar as tarefas de arquitetura:
 | 18 | [Scene stack e overlays](18-scene-stack-overlays.md) | 🟢 Baixa/Média | Arquitetura |
 | 19 | [FlowRouter: extrair a mecânica da fachada de navegação](19-flow-router-facade.md) | 🟢 Baixa (carona) | Arquitetura |
 | 20 | [Vocabulário de input como porta](20-input-vocabulary-port.md) | 🟢 Baixa (estacionada) | Arquitetura |
+| 21 | [`IWindowManager` obrigatório: remover a hipótese do `nullptr`](21-window-manager-mandatory.md) | 🟡 Média (breaking, 0.6.0) | Arquitetura |
 
 ## Legenda de status
 
