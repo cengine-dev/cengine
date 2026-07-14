@@ -104,7 +104,7 @@ Ler antes de executar as tarefas de arquitetura:
 | 17 | [Colisão 2D: detecção opt-in (AABB + círculo)](17-collision2d-detection.md) ✅ 0.7.0 | 🟡 Média | Arquitetura |
 | 18 | [Scene stack e overlays](18-scene-stack-overlays.md) | 🟢 Baixa/Média | Arquitetura |
 | 19 | [FlowRouter: extrair a mecânica da fachada de navegação](19-flow-router-facade.md) ✅ 0.6.0 | 🟢 Baixa (carona) | Arquitetura |
-| 20 | [Vocabulário de input como porta](20-input-vocabulary-port.md) | 🟢 Baixa (estacionada) | Arquitetura |
+| 20 | [Vocabulário de input como porta](20-input-vocabulary-port.md) ✅ 0.8.0 | 🟡 Média | Arquitetura |
 | 21 | [`IWindowManager` obrigatório: remover a hipótese do `nullptr`](21-window-manager-mandatory.md) ✅ 0.6.0 | 🟡 Média (breaking, 0.6.0) | Arquitetura |
 
 ## Legenda de status

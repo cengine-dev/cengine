@@ -1,8 +1,6 @@
 # 20 - Vocabulario de input como porta da cengine
 
-- **Status:** todo - **PRE-REQUISITO DO PROXIMO JOGO** (decisao do dono em
-  2026-07-14, ao encerrar o asteroids). Sai da geladeira: o proximo jogo nasce
-  depois dela, e e ele quem valida a porta como consumidor vivo.
+- **Status:** done (0.8.0) - validada pelo breakout, o consumidor vivo.
 - **Prioridade:** media (era baixa/estacionada).
 
 ## Atualizacao 2026-07-14 — o gate mudou de figura
@@ -98,9 +96,10 @@ Comecar APENAS quando pelo menos um destes for verdade:
       copia local (o `ForgeUi` do common passa a delegar — common 0.3.0).
 - [x] Nenhuma API de plataforma vazando pela porta (o modulo nao inclui nada
       de janela/GPU/terminal; a captura fica 100% na plataforma).
-- [ ] Cenas de pelo menos um jogo consumindo a porta: **breakout** (o proximo
-      jogo) — fecha quando o casco dele subir. O asteroids ja consome
-      indiretamente, via o ForgeUi que agora delega.
+- [x] Cenas de pelo menos um jogo consumindo a porta: **breakout** — as cenas
+      dele recebem `cengine::input::Keyboard&` INJETADO, e nao as funcoes
+      globais do forgeui (casco validado jogando em 2026-07-14). O asteroids
+      consome indiretamente, via o ForgeUi que agora delega.
 
 ## Pedagio da Emenda 1 (ADR 0002)
 
