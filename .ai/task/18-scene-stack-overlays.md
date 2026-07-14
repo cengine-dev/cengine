@@ -1,9 +1,50 @@
 # 18 - Scene stack e overlays
 
-- **Status:** todo
+- **Status:** estacionada - gate avaliado em 2026-07-14 (breakout) e REPROVADO;
+  1 de 2 evidencias. Ver "Avaliacao do gate".
 - **Prioridade:** baixa/media - so deve subir quando houver consumidor real
   precisando de pause menu, modal, inventario, debug overlay ou telas
   sobrepostas.
+
+## Avaliacao do gate (2026-07-14) - o breakout ganhou pausa, e nao precisou disto
+
+O breakout (task 05 daquele repo) foi o primeiro jogo do ecossistema a precisar
+de "uma tela por cima do jogo, sem destruir a cena de baixo" — o caso 1 da lista
+de criterios para comecar. Ele NAO destravou a task, por dois motivos:
+
+**1. Uma evidencia nao sao duas (ADR 0002, criterio 2).** Nenhum outro jogo tem
+pausa, modal ou overlay — nem os congelados. A contagem de evidencias e ZERO
+antes do breakout, e UM depois. O criterio pede duas.
+
+**2. O caso real custou 10 linhas DENTRO do jogo — e a propria task 18 mandava
+fazer assim** ("Degrau 1: se o caso for simples e exclusivo de um jogo, preferir
+implementar dentro do proprio jogo primeiro"). A cena do jogo ganhou um `bool
+m_paused`: o `update()` retorna cedo (o World congela, com a bola no ar) e o
+`draw()` desenha o jogo, um veu escuro por cima e o painel. As tres politicas do
+desenho proposto aqui saem de graca quando a camada de baixo E VOCE MESMO:
+
+  - `blocksInputBelow`: o `input()` trata a pausa e retorna — a cena de baixo
+    nao ve nada porque nao ha cena de baixo;
+  - `updatesBelow = false`: e o early-return do update;
+  - `drawsBelow = true`: e desenhar o jogo antes do veu.
+
+Promover um `SceneStack` com politicas de propagacao para servir a este caso
+seria construir a abstracao mais cara do plano para um problema que um `bool`
+resolve. E o risco que esta propria task nomeia: "fazer a engine crescer para um
+caso que um jogo resolveria localmente com menos complexidade".
+
+**Novo gate (mais afiado que o antigo):** comecar quando um **segundo** consumidor
+precisar de camadas sobrepostas E o `bool` local nao der conta — ou seja, quando
+aparecer o caso que o breakout NAO tem:
+
+- overlay que precisa que a cena de baixo **continue rodando** (debug/FPS,
+  notificacao) — o `bool` so sabe congelar;
+- **duas ou mais** camadas empilhadas (modal sobre pausa sobre jogo);
+- overlay que precisa **sobreviver a troca de cena** de baixo.
+
+Enquanto o caso for "pausa que congela o jogo", ele nao paga uma abstracao nova.
+
+**Evidencia 1/2 registrada:** breakout, `ForgeGameScene::m_paused`.
 - **Categoria:** Arquitetura / routing
 - **Depende de:** 13 done (Router x Repository separados), 15 done (modo
   hospedado) e 16 done (present no fim do quadro).
