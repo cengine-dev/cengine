@@ -126,78 +126,116 @@ TEST(Collision2dTest, CircleBoxIntersectionIsSymmetric)
 // =============================================================================
 // Consumidores reais — o pedagio da Emenda 1 (ADR 0002)
 // =============================================================================
-
-// --- Space Invaders (ESTACIONADO na 0.5.0): a evidencia AABB ---
 //
-// Arena 224x256, Y para baixo, SEM wrap. Sprites do arcade: invasor 12x8, tiro
-// do jogador 1x4, bomba 3x7, canhao 13x8. Se o modulo nao consegue expressar
-// isto, ele nao esta pronto para subir.
+// Os testes abaixo NAO inventam numeros: cada cena e transcrita do codigo do
+// jogo que a originou, com a fonte citada (repo @ tag, arquivo e linha). E o que
+// os torna verificaveis — quem duvidar de um valor abre o arquivo e confere,
+// em vez de acreditar em mim. Se o jogo citado for uma referencia congelada, o
+// arquivo esta la parado, entao a citacao nao apodrece.
+
+// -----------------------------------------------------------------------------
+// Space Invaders — a evidencia AABB
+//
+//   Fonte: github.com/mrmarmitt/spaceinvaders @ bb4e9b1 (jogo ESTACIONADO na
+//          cengine 0.5.0 pela ADR 0003 — nunca vai linkar este modulo; o repo
+//          nao tem tags, entao a referencia estavel e o commit em que ele parou.
+//          Sendo codigo congelado, as linhas citadas abaixo nao se mexem.)
+//   Arena: 224x256, Y para baixo, SEM wrap ...... src/spaceinvaders/game/World.h:48-49
+//   Colisao original (AABB a mao) .............. src/spaceinvaders/game/World.h:26-29
+//   Tiro x invasor ............................. src/spaceinvaders/game/World.cpp:227
+//   Bomba x canhao ............................. src/spaceinvaders/game/World.cpp:259
+//
+// Medidas transcritas de World.cpp:9-47 — canhao 13x8 em y=232, tiro 3x7,
+// bomba 3x7, invasor 8..12 de largura por 8 de altura (Squid 8, Crab 11,
+// Octopus 12), celula da horda 16x12.
+//
+// Se o modulo nao consegue expressar estas cenas, ele nao esta pronto para subir.
+// -----------------------------------------------------------------------------
 
 TEST(Collision2dTest, SpaceInvadersPlayerShotHitsInvader)
 {
-    const Aabb invader{ 100.0f, 60.0f, 12.0f, 8.0f };
+    // Um Crab (11x8), como o invaderRect() do jogo o monta.
+    const Aabb invader{ 100.0f, 60.0f, 11.0f, 8.0f };
 
-    // Tiro subindo, entrando na base do invasor.
-    const Aabb shotHitting{ 104.0f, 64.0f, 1.0f, 4.0f };
-    EXPECT_TRUE(intersects(shotHitting, invader));
+    // Tiro do jogador (3x7) subindo, entrando pela base do invasor.
+    EXPECT_TRUE(intersects(Aabb{ 104.0f, 64.0f, 3.0f, 7.0f }, invader));
 
     // Mesma coluna, ainda abaixo dele: nao acertou (ainda).
-    const Aabb shotBelow{ 104.0f, 80.0f, 1.0f, 4.0f };
-    EXPECT_FALSE(intersects(shotBelow, invader));
+    EXPECT_FALSE(intersects(Aabb{ 104.0f, 80.0f, 3.0f, 7.0f }, invader));
 
-    // Na altura certa, mas na coluna do vizinho: passa raspando.
-    const Aabb shotBeside{ 120.0f, 64.0f, 1.0f, 4.0f };
-    EXPECT_FALSE(intersects(shotBeside, invader));
+    // Na altura certa, mas na coluna do vizinho (celula da horda = 16): passa.
+    EXPECT_FALSE(intersects(Aabb{ 116.0f, 64.0f, 3.0f, 7.0f }, invader));
 }
 
 TEST(Collision2dTest, SpaceInvadersBombHitsPlayerCannon)
 {
-    const Aabb cannon{ 50.0f, 216.0f, 13.0f, 8.0f };
+    // Canhao 13x8 na linha do jogador (kPlayerY = 232).
+    const Aabb cannon{ 50.0f, 232.0f, 13.0f, 8.0f };
 
-    const Aabb bombHitting{ 55.0f, 214.0f, 3.0f, 7.0f };
-    EXPECT_TRUE(intersects(bombHitting, cannon));
+    // Bomba (3x7) chegando na cabeca do canhao.
+    EXPECT_TRUE(intersects(Aabb{ 55.0f, 228.0f, 3.0f, 7.0f }, cannon));
 
-    const Aabb bombFalling{ 55.0f, 180.0f, 3.0f, 7.0f };
-    EXPECT_FALSE(intersects(bombFalling, cannon));
+    // Ainda caindo, la em cima: nada.
+    EXPECT_FALSE(intersects(Aabb{ 55.0f, 180.0f, 3.0f, 7.0f }, cannon));
 }
 
-// --- Asteroids (consumidor VIVO): a evidencia circulo ---
+TEST(Collision2dTest, SpaceInvadersEdgeContractIsPreserved)
+{
+    // O `si::Rect::intersects` original (World.h:26-29) usa comparacoes
+    // ESTRITAS (`x < other.x + other.w`): encostar nao colide. O `intersects`
+    // desta engine mantem o mesmo contrato — o jogo congelado nao mudaria de
+    // comportamento se fosse migrado (e e essa a promessa que a promocao faz).
+    const Aabb invader{ 100.0f, 60.0f, 11.0f, 8.0f };
+    const Aabb shotTouchingTheLeftEdge{ 97.0f, 64.0f, 3.0f, 7.0f }; // 97+3 == 100
+
+    EXPECT_FALSE(intersects(shotTouchingTheLeftEdge, invader));
+}
+
+// -----------------------------------------------------------------------------
+// Asteroids — a evidencia circulo
 //
-// Arena 800x600 que DA A VOLTA. O wrap fica no jogo: ele calcula o menor delta
-// no toro e pergunta a engine com a posicao ja corrigida — a engine nao sabe (e
-// nao deve saber) o formato do mundo. Estes testes mostram os dois lados desse
-// contrato.
+//   Fonte: github.com/mrmarmitt/asteroids @ main (consumidor VIVO)
+//   Arena: 800x600 que DA A VOLTA ............. src/asteroids/game/World.h (kArenaW/kArenaH)
+//   Raios: nave 9, tiro 2, rocha 42/22/11 ..... src/asteroids/game/World.h (kShipRadius,
+//                                               kShotRadius, asteroidRadius)
+//   Correcao do toro (fica NO JOGO) ........... src/asteroids/game/World.cpp (toroidalDelta,
+//                                               chamado por World::circlesOverlap)
+// -----------------------------------------------------------------------------
 
 TEST(Collision2dTest, AsteroidsShotHitsRock)
 {
-    const Circle rock{ { 400.0f, 180.0f }, 42.0f };
+    const Circle rock{ { 400.0f, 180.0f }, 42.0f }; // rocha grande
+    const Circle shot{ { 400.0f, 220.0f }, 2.0f };  // tiro subindo, a 40 do centro
 
-    EXPECT_TRUE(intersects(Circle{ { 400.0f, 220.0f }, 2.0f }, rock));
-    EXPECT_FALSE(intersects(Circle{ { 400.0f, 300.0f }, 2.0f }, rock));
+    EXPECT_TRUE(intersects(shot, rock)) << "40 < 42 + 2: o tiro entrou na rocha";
+
+    EXPECT_FALSE(intersects(Circle{ { 400.0f, 300.0f }, 2.0f }, rock)) << "ainda a caminho";
 }
 
 TEST(Collision2dTest, AsteroidsShipHitsRock)
 {
     const Circle ship{ { 400.0f, 300.0f }, 9.0f };
-    const Circle rock{ { 430.0f, 300.0f }, 22.0f };
+    const Circle mediumRock{ { 430.0f, 300.0f }, 22.0f };
 
-    EXPECT_TRUE(intersects(ship, rock));
+    EXPECT_TRUE(intersects(ship, mediumRock)) << "30 < 9 + 22";
+    EXPECT_FALSE(intersects(ship, Circle{ { 440.0f, 300.0f }, 22.0f })) << "40 > 9 + 22";
 }
 
 TEST(Collision2dTest, AsteroidsWrapIsTheGamesJobNotTheEngines)
 {
     // Nave colada na borda esquerda, rocha colada na direita: na arena-toro do
-    // Asteroids elas se tocam (10 de distancia PELA BORDA).
+    // Asteroids elas se tocam — a distancia PELA BORDA e 10, nao 790.
     const Circle ship{ { 5.0f, 300.0f }, 9.0f };
     const Circle rockFarSide{ { 795.0f, 300.0f }, 22.0f };
 
-    // A engine, que nao sabe do toro, responde o que a geometria plana diz:
-    // 790 de distancia, nao se tocam. E o certo — ela nao tem opiniao sobre o
-    // formato do mundo.
+    // A engine, que nao sabe do toro, responde o que a geometria plana diz: 790
+    // de distancia, nao se tocam. E esta CERTA — ela nao tem (nem deve ter)
+    // opiniao sobre o formato do mundo.
     EXPECT_FALSE(intersects(ship, rockFarSide));
 
-    // O JOGO corrige a posicao pelo menor delta no toro e pergunta de novo.
-    // (Aqui, o mesmo que o ast::World::toroidalDelta faz: 795 - 800 = -5.)
+    // O JOGO corrige a posicao pelo menor delta no toro e pergunta de novo — e
+    // exatamente isto que o ast::World::circlesOverlap faz antes de chamar aqui
+    // (795 - 800 = -5, a 10 da nave).
     constexpr float kArenaW = 800.0f;
     const Circle    rockWrapped{ { rockFarSide.center.x - kArenaW, rockFarSide.center.y }, rockFarSide.radius };
 

@@ -75,6 +75,22 @@ Assim a "documentação viva" da ADR 0003 deixa de ser metáfora e vira teste
 executável: o aprendizado do jogo pronto fica reforçado *dentro* da estrutura,
 que é o propósito de tê-lo congelado em vez de apagado.
 
+### Regra de proveniência (parte do pedágio)
+
+Um teste de consumidor real **cita a origem**: repositório @ commit/tag, arquivo
+e linha de onde a cena foi transcrita, e os valores são os do jogo — não valores
+inventados que "parecem" plausíveis.
+
+Sem isso o teste afirma um caso de uso; com isso ele **prova** um caso de uso, e
+qualquer leitor pode abrir o arquivo citado e conferir. É o que separa um teste
+que documenta um fato de um teste que documenta uma lembrança — e a diferença
+não é acadêmica: na primeira versão dos testes do `collision2d`, o tiro do Space
+Invaders foi escrito como 1×4; o jogo real usa **3×7** (`World.cpp:15-16`). O
+teste passava, e mentia.
+
+Código congelado é o citador ideal: as linhas não se mexem, então a citação não
+apodrece.
+
 **Limite que a emenda NÃO afrouxa.** Evidência congelada não dispensa o critério
 1. Continua valendo o corte mecanismo × política — e ele é feito por conceito,
 não por arquivo. Exemplo do próprio `collision2d`: as **formas** e o teste de

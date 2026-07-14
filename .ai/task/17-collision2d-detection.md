@@ -68,8 +68,15 @@ struct Circle { Vec2 center; float radius; };
 - [x] Testes cobrindo intersecao, nao-intersecao e as BORDAS (encostar conta?)
       das tres combinacoes de forma.
 - [x] **Pedagio da Emenda 1 — a suite encarna o caso do jogo congelado:** um
-      teste reproduz tiro x invasor / bomba x jogador do Space Invaders sobre o
+      teste reproduz tiro x invasor / bomba x canhao do Space Invaders sobre o
       modulo, provando que o mecanismo expressa o caso dele sem descongela-lo.
+      Inclui o contrato de borda: o `si::Rect::intersects` original usa
+      comparacoes estritas (encostar nao colide), e o `intersects` da engine
+      mantem isso — o jogo congelado nao mudaria de comportamento se migrasse.
+- [x] **Regra de proveniencia (0.7.1):** os testes de consumidor real CITAM a
+      origem (repo @ commit, arquivo, linha) e transcrevem os valores do jogo.
+      Na 0.7.0 as medidas do Space Invaders foram inventadas (tiro 1x4; o real e
+      3x7) — passavam, e mentiam.
 - [x] **Consumidor vivo validado:** o asteroids reproduz tiro x rocha e nave x
       rocha, com o wrap-around ficando no jogo.
 - [x] README documenta que a engine DETECTA colisao; regra e ownership seguem

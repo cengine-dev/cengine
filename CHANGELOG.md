@@ -5,6 +5,30 @@ All notable changes to CEngine are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-07-14
+
+Provenance in the tests. No API change — `collision2d` is byte-for-byte the same
+module; only its suite and the ADR changed.
+
+### Changed
+
+- **Real-consumer tests now cite their origin** (ADR 0002, Amendment 1 — new
+  *provenance rule*): repository @ commit, file and line the scene was
+  transcribed from, with the game's own values instead of invented ones.
+  - **This caught a lie.** The 0.7.0 tests wrote the Space Invaders player shot
+    as `1x4`; the frozen game uses **`3x7`** (`World.cpp:15-16`). The test
+    passed, and misrepresented the very case it existed to prove. All Space
+    Invaders measurements are now transcribed from
+    `spaceinvaders@bb4e9b1` (the commit the game is parked at — the repo has no
+    tags, and frozen code makes for stable citations).
+  - Without provenance a test *asserts* a use case; with it, the test **proves**
+    one, and any reader can open the cited file and check.
+- **New test: the frozen game's edge contract is preserved.** `si::Rect::
+  intersects` uses strict comparisons (touching boxes don't collide) and so does
+  `cengine::collision2d::intersects` — i.e. Space Invaders would not change
+  behavior if it were ever migrated. That is the promise a promotion makes, and
+  now it is executable.
+
 ## [0.7.0] - 2026-07-14
 
 2D collision **detection** as an opt-in module (task 17), and the promotion rule
