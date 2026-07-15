@@ -127,6 +127,35 @@ que precisa disparar antes de começar. Ver [ADR 0002](../decisions/0002-criteri
   como PORTA (`play(id)`, ao lado do input), com o BACKEND ficando na plataforma;
   espera um 2º jogo com som (mario é o candidato).
 
+## Consideradas e vetadas (política de jogo — NÃO reabrir sem argumento novo)
+
+Padrões que se REPETEM entre os jogos e, ainda assim, **não sobem** — o veredito
+já foi dado (ADR 0002: a duplicação é o custo aceito quando a forma se repete mas
+o SIGNIFICADO é do jogo). Registrado aqui para ninguém reabrir "e isto, não é
+candidato?" daqui a alguns jogos. O discriminador: o input subiu porque as 4
+cópias eram o MESMO dado puro (o enum `Key`); os itens abaixo têm cópias
+estruturalmente parecidas mas **semanticamente diferentes**. Semelhança de forma
+≠ identidade de mecanismo.
+
+- **Recordes** (`Record` + `RecordService` + `RecordRepository` + `FileRecordRepository`)
+  — em 4 jogos (8puzzle, spaceinvaders, asteroids, breakout), a MAIOR duplicação
+  do ecossistema. Vetado explicitamente (asteroids task 05, breakout task 07):
+  o que é um recorde, quantos guardar, a ordem (movimentos↓ do 8puzzle vs score↑
+  dos arcades) e onde persistir são decisões DO JOGO. Confirmado por diff: as
+  portas DIFEREM entre jogos — não é o mesmo mecanismo.
+- **`PlaySession`** (carregador do resultado da última partida entre cenas) — em
+  3 jogos, ~10 linhas, quase idêntico (score+wave/level). É um struct de valor,
+  não um mecanismo: promover seria "um `shared_ptr` que o composition root já
+  segura". O conteúdo (o que é um "resultado") é política.
+- **Wrap-around / toro** (arena que dá a volta) — ficou no asteroids; fora de
+  escopo declarado na task 17. Formato do mundo é política; sem 2º consumidor (o
+  mario não dá a volta). Promover daria à engine uma opinião sobre o formato do
+  mundo.
+
+Sweep de 2026-07-15 (ao fechar o degrau 2 do mario): nenhuma candidata nova além
+das estacionadas acima; nenhum math/Vec2/RNG/timer próprio duplicado (os jogos
+usam `collision2d::Vec2`).
+
 ## Legenda de status
 
 Marque no topo de cada arquivo conforme avança:
