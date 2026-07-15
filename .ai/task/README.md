@@ -108,6 +108,7 @@ Ler antes de executar as tarefas de arquitetura:
 | 21 | [`IWindowManager` obrigatório: remover a hipótese do `nullptr`](21-window-manager-mandatory.md) ✅ 0.6.0 | 🟡 Média (breaking, 0.6.0) | Arquitetura |
 | 22 | [Colisão 2D: resolução (penetração/MTV)](22-collision2d-resolution.md) | 🟢 Baixa/Média (estacionada — gate avaliado pelo mario-bros: 1 de 2 evidências, e sinal de que resolver é política) | Arquitetura |
 | 23 | [Câmera / viewport (mundo→tela + culling)](23-camera-viewport.md) | 🟢 Baixa (estacionada — candidata registrada; consumidor a nascer no mario degrau 4: 0 de 2 evidências) | Arquitetura |
+| 24 | [Áudio como porta (`play(id)`), backend na plataforma](24-audio-port.md) | 🟢 Baixa (estacionada — 1 de 2 evidências: breakout; backend fica na plataforma) | Arquitetura |
 
 ## Candidatas estacionadas (esperando evidência)
 
@@ -122,6 +123,9 @@ que precisa disparar antes de começar. Ver [ADR 0002](../decisions/0002-criteri
   política. Espera um 2º consumidor com o MESMO mecanismo.
 - **23 (câmera/viewport)** — 0/2: a fronteira-título do mario; o consumidor
   (degrau 4) ainda vai nascer.
+- **24 (áudio como porta)** — 1/2: breakout trouxe som (XAudio2, no jogo). Subiria
+  como PORTA (`play(id)`, ao lado do input), com o BACKEND ficando na plataforma;
+  espera um 2º jogo com som (mario é o candidato).
 
 ## Legenda de status
 
