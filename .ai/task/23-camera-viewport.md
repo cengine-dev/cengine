@@ -1,8 +1,8 @@
 # 23 - Camera / viewport (projecao mundo -> tela + culling)
 
-- **Status:** estacionada - candidata REGISTRADA para nao se perder; o
-  consumidor que a produziria (mario-bros degrau 4) ainda NAO nasceu. 0 de 2
-  evidencias. Nao implementar.
+- **Status:** estacionada - **1 de 2 evidencias** (mario-bros degrau 4 nasceu,
+  2026-07-15). Gate nao disparado: falta um 2o consumidor com o MESMO modelo de
+  projecao. Nao implementar ainda. Ver "Avaliacao do gate".
 - **Prioridade:** baixa - so faz sentido depois de existir um nivel maior que a
   tela, e de um SEGUNDO consumidor com o mesmo modelo de camera.
 - **Categoria:** Arquitetura / possivel modulo novo opt-in (ou fica no jogo).
@@ -20,8 +20,37 @@ janela (senao a camera nunca aparece).
 
 Esta task nao manda construir nada: ela **registra a candidata** para o
 aprendizado nao se perder entre os projetos, do mesmo jeito que a task 18 (scene
-stack) ficou parada esperando o caso real. Quando o degrau 4 do mario nascer, ele
-sera a **evidencia 1/2**.
+stack) ficou parada esperando o caso real.
+
+## Avaliacao do gate (2026-07-15) - o mario ganhou camera, e ela ficou no jogo
+
+O degrau 4 do mario-bros trouxe a **1a evidencia**: nivel 64 colunas (maior que a
+tela), camera que rola suave seguindo o jogador, com culling. Ela NAO destravou a
+promocao, por dois motivos:
+
+**1. Uma evidencia nao sao duas (ADR 0002, criterio 2).** E o primeiro e unico
+jogo do ecossistema com nivel maior que a tela. Contagem: UM.
+
+**2. A camera ja NASCEU partida em duas metades, e so uma e candidata.** O
+`mario::Camera` separou de proposito:
+  - a **transformada mundo->janela + culling** — mecanismo puro, agnostico. E o
+    que poderia subir.
+  - o **seguimento** (ancora do foco, travar nos limites do nivel) — FEEL. O
+    mario rola suave e horizontal; um metroidvania saltaria por sala; um jogo de
+    nave centraria diferente. Promover um seguimento daria a engine uma opiniao
+    sobre o genero.
+
+Ou seja: mesmo com um 2o consumidor, so a transformada+culling subiria; o
+seguimento de cada jogo fica no jogo. Enquanto houver so o mario, nem isso — a
+copia (uma projecao por jogo) e o custo aceito.
+
+**Evidencia 1/2 registrada:** mario-bros @ commit `4a8f825`,
+`src/mario/camera/Camera.{h,cpp}` (a transformada + `visible()` de culling; o
+`follow()` e o feel) e `ForgeGameScene::viewport/drawSprite` (a projecao subtrai
+a camera). 7 testes de camera no jogo.
+
+**Novo gate:** comecar quando um **2o** consumidor precisar de projecao/culling
+com o MESMO modelo; o seguimento nunca sobe.
 
 ## Contexto
 
