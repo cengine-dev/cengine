@@ -456,10 +456,10 @@ routing as an **opt-in module**.
 - Initial single-target (`cengine_lib`) engine: game loop, scene/state
   management, and in-memory router.
 
-[0.6.0]: https://github.com/mrmarmitt/cengine/compare/0.5.0...0.6.0
-[0.5.0]: https://github.com/mrmarmitt/cengine/compare/0.4.0...0.5.0
-[0.4.0]: https://github.com/mrmarmitt/cengine/compare/0.3.0...0.4.0
-[0.3.0]: https://github.com/mrmarmitt/cengine/compare/0.2.0...0.3.0
-[0.2.0]: https://github.com/mrmarmitt/cengine/compare/0.1.0...0.2.0
-[0.1.0]: https://github.com/mrmarmitt/cengine/compare/0.0.1...0.1.0
-[0.0.1]: https://github.com/mrmarmitt/cengine/releases/tag/0.0.1
+[0.6.0]: https://github.com/cengine-dev/cengine/compare/0.5.0...0.6.0
+[0.5.0]: https://github.com/cengine-dev/cengine/compare/0.4.0...0.5.0
+[0.4.0]: https://github.com/cengine-dev/cengine/compare/0.3.0...0.4.0
+[0.3.0]: https://github.com/cengine-dev/cengine/compare/0.2.0...0.3.0
+[0.2.0]: https://github.com/cengine-dev/cengine/compare/0.1.0...0.2.0
+[0.1.0]: https://github.com/cengine-dev/cengine/compare/0.0.1...0.1.0
+[0.0.1]: https://github.com/cengine-dev/cengine/releases/tag/0.0.1

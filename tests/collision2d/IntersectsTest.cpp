@@ -136,7 +136,7 @@ TEST(Collision2dTest, CircleBoxIntersectionIsSymmetric)
 // -----------------------------------------------------------------------------
 // Space Invaders — a evidencia AABB
 //
-//   Fonte: github.com/mrmarmitt/spaceinvaders @ bb4e9b1 (jogo ESTACIONADO na
+//   Fonte: github.com/cengine-dev/spaceinvaders @ bb4e9b1 (jogo ESTACIONADO na
 //          cengine 0.5.0 pela ADR 0003 — nunca vai linkar este modulo; o repo
 //          nao tem tags, entao a referencia estavel e o commit em que ele parou.
 //          Sendo codigo congelado, as linhas citadas abaixo nao se mexem.)
@@ -194,7 +194,7 @@ TEST(Collision2dTest, SpaceInvadersEdgeContractIsPreserved)
 // -----------------------------------------------------------------------------
 // Asteroids — a evidencia circulo
 //
-//   Fonte: github.com/mrmarmitt/asteroids @ main (consumidor VIVO)
+//   Fonte: github.com/cengine-dev/asteroids @ main (consumidor VIVO)
 //   Arena: 800x600 que DA A VOLTA ............. src/asteroids/game/World.h (kArenaW/kArenaH)
 //   Raios: nave 9, tiro 2, rocha 42/22/11 ..... src/asteroids/game/World.h (kShipRadius,
 //                                               kShotRadius, asteroidRadius)

@@ -129,14 +129,14 @@ and Asteroids' circle).
 ## Usage
 
 CEngine is consumed via CMake's `FetchContent` (this is how the sibling
-[8Puzzle](https://github.com/mrmarmitt/8puzzle) project uses it):
+[8Puzzle](https://github.com/cengine-dev/8puzzle) project uses it):
 
 ```cmake
 include(FetchContent)
 
 FetchContent_Declare(
   cengine
-  GIT_REPOSITORY https://github.com/mrmarmitt/cengine.git
+  GIT_REPOSITORY https://github.com/cengine-dev/cengine.git
   GIT_TAG        main   # pin a tagged release once available
 )
 
