@@ -109,6 +109,7 @@ Ler antes de executar as tarefas de arquitetura:
 | 22 | [Colisão 2D: resolução (penetração/MTV)](22-collision2d-resolution.md) | 🟢 Baixa/Média (estacionada — gate avaliado pelo mario-bros: 1 de 2 evidências, e sinal de que resolver é política) | Arquitetura |
 | 23 | [Câmera / viewport (mundo→tela + culling)](23-camera-viewport.md) | 🟢 Baixa (estacionada — 1 de 2 evidências: mario degrau 4; só a transformada+culling é candidata, o seguimento é feel) | Arquitetura |
 | 24 | [Áudio como porta (`play(id)`), backend na plataforma](24-audio-port.md) ✅ 0.9.0 | 🟡 Média (gate disparou com 2/2: breakout + mario@0fab493; mario valida a 0.9.0) | Arquitetura |
+| 25 | [Clip de animação de sprite (frames sobre tempo)](25-sprite-animation-clip.md) | 🟢 Baixa (estacionada — 1 de 2 evidências: mario `PlayerAnimator`; o spaceinvaders anima SEM relógio, sinal de divergência) | Arquitetura |
 
 ## Candidatas estacionadas (esperando evidência)
 
@@ -130,6 +131,12 @@ que precisa disparar antes de começar. Ver [ADR 0002](../decisions/0002-criteri
   discriminador do input) e a porta subiu: `cengine::audio::Player` com
   `play(id)` e mais nada, backend segue nas plataformas. É a prova de que uma
   estacionada não é uma recusa: é uma espera com critério.
+- **25 (clip de animação de sprite)** — 1/2: o mario trouxe o `PlayerAnimator`
+  (ciclo de frames dirigido pelo TEMPO: clip = frames + fps + loop). O
+  spaceinvaders anima SEM relógio (a pose deriva do passo da marcha,
+  `animFrame()`) — forma diferente, o mesmo sinal de divergência da 22. Espera
+  um 2º jogo com ciclo de frames dirigido pelo tempo; a ESCOLHA do clip
+  (Idle/Walk/Jump, facing) é política e fica no jogo.
 
 ## Consideradas e vetadas (política de jogo — NÃO reabrir sem argumento novo)
 
@@ -167,6 +174,17 @@ estruturalmente parecidas mas **semanticamente diferentes**. Semelhança de form
   recorte mecanismo é a penetração/MTV, que É a task 22; "física na engine"
   congelaria até o formato de mundo (rampas tipo Sonic estouram o AABB).
   Reabre se um jogo futuro copiar o `World` do mario quase literalmente.
+- **`Events` por quadro** (o struct de contadores que o World zera e preenche a
+  cada `update` — `brk::Events` no breakout, `mario::Events` no mario) — o
+  PADRÃO se repete (fatos, não sons; a cena decide o significado) e deve
+  continuar se repetindo nos próximos jogos, mas os CAMPOS são o vocabulário de
+  cada jogo (tijolos/vidas/fase vs pulo/moeda/pisão/bandeira). Mesmo caso do
+  `PlaySession`: struct de valor, não mecanismo. O padrão é disciplina de
+  projeto, documentada nas tasks dos jogos; não vira tipo da engine.
+- **Formatação de tempo** — o common já tem `formatMillis` (hh:mm:ss.mmm, do
+  8puzzle) e o mario criou `ui::formatTime` (M:SS.cc) SEM reusar: os formatos
+  divergem de propósito (cronômetro de puzzle vs HUD de arcade). Formato de
+  exibição é feel; duas cópias com saídas diferentes não são o mesmo mecanismo.
 
 Sweep de 2026-07-15 (ao fechar o degrau 2 do mario): nenhuma candidata nova além
 das estacionadas acima; nenhum math/Vec2/RNG/timer próprio duplicado (os jogos
@@ -174,9 +192,17 @@ usam `collision2d::Vec2`).
 
 Sweep de 2026-07-16 (ao fechar o mario completo — degraus 1-5, com goombas,
 recordes por pontos/tempo e bandeira): nenhuma candidata nova; física de
-plataforma avaliada e vetada (acima); tasks 22/23/24 seguem estacionadas com os
+plataforma avaliada e vetada (acima); tasks 22/23 seguem estacionadas com os
 gates inalterados (o pisão no goomba REFORÇA a leitura da 22: mais um contato
-resolvido com regra própria do jogo).
+resolvido com regra própria do jogo). A 24 promoveu logo em seguida (0.9.0).
+
+Sweep de 2026-07-17 (revisão pós-0.9.0, antes do 6º jogo): uma candidata nova
+na ENGINE — o clip de animação de sprite (task 25, estacionada 1/2, mario
+`PlayerAnimator`). Duas candidatas novas no nível da PLATAFORMA, registradas no
+backlog do platform-theforge-common (lá é a casa delas, não aqui): o backend
+XAudio2 da porta de áudio (2 cópias idênticas: breakout + mario) e o escritor
+de DDS dos geradores de atlas (3 cópias idênticas: spaceinvaders + breakout +
+mario). Vetados novos abaixo: `Events` por quadro e formatação de tempo.
 
 ## Legenda de status
 
