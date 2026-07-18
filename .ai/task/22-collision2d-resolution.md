@@ -1,14 +1,19 @@
-# 22 - Colisao 2D: resolucao (penetracao / MTV)
+# 22 - Colisao 2D: resolucao posicional (recorte a decidir)
 
-- **Status:** estacionada - gate avaliado em 2026-07-15 (mario-bros) e NAO
-  disparado; 1 de 2 evidencias, E com sinal de que "resolver" pode ser politica
-  de jogo, nao mecanismo. Ver "Avaliacao do gate".
-- **Prioridade:** baixa/media - so deve subir quando um segundo consumidor
-  precisar de penetracao/MTV **e resolver do MESMO jeito** que o primeiro.
+- **Status:** estacionada para recorte - reavaliada em 2026-07-18 com o Zelda.
+  Agora existem **2 de 2 evidencias** de resolucao posicional eixo-separada
+  (mario-bros + zelda), mas **nenhum** dos dois consome penetracao/MTV. A
+  evidencia nova dispara a comparacao do mecanismo; nao autoriza implementar a
+  API original desta task. Ver "Reavaliacao com o Zelda".
+- **Prioridade:** baixa/media - comparar as duas implementacoes eixo-separadas
+  e promover apenas um nucleo puro que ambas realmente consumiriam. Se esse
+  nucleo nao existir sem carregar politica de tiles/movimento, a candidata deve
+  ser vetada, nao generalizada por antecipacao.
 - **Categoria:** Arquitetura / extensao do modulo `collision2d`
 - **Depende de:** 17 done (deteccao AABB + circulo).
-- **Breaking:** nao. Entraria como funcao NOVA opt-in do `collision2d`
-  (penetracao/MTV puro), sem tocar o `intersects` existente.
+- **Breaking:** esperado que nao. Qualquer recorte deve entrar como API NOVA e
+  opt-in do `collision2d`, sem tocar o `intersects` existente; a assinatura so
+  pode ser definida depois da comparacao Mario x Zelda.
 
 ## Avaliacao do gate (2026-07-15) - o mario resolveu, e nao precisou disto
 
@@ -69,6 +74,32 @@ do jogo (matar + pulinho + so na metade superior do corpo), irmao da one-way e
 diferente de ambos os anteriores. Tres formas de "resolver" em dois jogos, todas
 politica. O gate segue: 2o consumidor consumindo penetracao/MTV do MESMO jeito.
 
+## Reavaliacao com o Zelda (2026-07-18) - 2/2 do eixo-separado, 0/2 do MTV
+
+O Zelda, task 02, trouxe a **2a evidencia real de resolucao posicional
+eixo-separada**. Seu `World::moveAndResolveX/Y` repete a sequencia estrutural do
+Mario: mover em X e empurrar pela face de entrada; depois mover em Y e empurrar
+pela face de entrada. Nos dois jogos, ficar bloqueado num eixo preserva o
+movimento no outro. A diferenca de genero confirma que o padrao nao e exclusivo
+de plataforma: no Zelda os dois eixos sao dirigidos e simetricos, sem gravidade
+nem tile one-way.
+
+**Evidencia 2/2 registrada:** zelda, task 02 (done e validada jogando),
+`zelda::World::moveAndResolveX` / `moveAndResolveY`, com testes de parar e
+deslizar nas paredes em ambos os eixos.
+
+A evidencia, porem, **nao e de penetracao/MTV**. Assim como o Mario, o Zelda ja
+sabe o eixo e o sentido do movimento; nenhum dos dois calcula ou deseja um
+vetor de separacao minimo generico. Implementar agora a `penetration()` proposta
+abaixo continuaria sendo especulacao: teria 0 consumidores reais.
+
+O gate do ADR 0002 foi atingido para **avaliar a extracao do mecanismo
+eixo-separado**, nao para promover automaticamente uma estrategia de resolucao.
+Antes de codigo na engine, e preciso colocar as duas implementacoes lado a lado
+e identificar se sobra um nucleo puro, sem grade de tiles, `grounded`, eventos,
+gravidade ou regras de dano, que os dois jogos realmente substituiriam. Se nao
+sobrar uma API pequena e util, a repeticao fica nos jogos.
+
 ## Contexto
 
 `cengine::collision2d` e um modulo de **deteccao**: `intersects(forma, forma) ->
@@ -76,10 +107,10 @@ bool` (task 17). Um plataforma precisa de mais para os corpos NAO se
 atravessarem: dado que dois AABB se sobrepoem, *quanto* e *em que direcao*
 separar. Isso e penetracao (um vetor), nao um booleano.
 
-## Objetivo (SE o gate disparar)
+## Objetivo original (nao autorizado pela evidencia atual)
 
-Oferecer o **calculo de penetracao/MTV puro** — um vetor de separacao minimo
-entre duas formas — sem resolver nada:
+A proposta inicial era oferecer o **calculo de penetracao/MTV puro** — um vetor
+de separacao minimo entre duas formas — sem resolver nada:
 
 ```cpp
 namespace cengine::collision2d {
@@ -94,6 +125,10 @@ A engine responde "quanto se penetram?"; o jogo continua dono de mover a
 entidade, escolher a estrategia (eixo-separado vs MTV), zerar velocidade, marcar
 `grounded`, tocar som.
 
+Esta API permanece como registro de uma hipotese, nao como plano de
+implementacao. Mario e Zelda fornecem evidencia para o eixo-separado e nao para
+MTV; o recorte da task deve ser redesenhado a partir deles antes de subir.
+
 ## Fora do Escopo (o corte mecanismo x politica)
 
 - **A ESTRATEGIA de resolucao.** Eixo-separado (mario) vs menor-penetracao
@@ -104,24 +139,28 @@ entidade, escolher a estrategia (eixo-separado vs MTV), zerar velocidade, marcar
 - Fisica, corpos rigidos, impulsos, atrito, sweep/CCD, 3D.
 - Ownership de entidades.
 
-## Criterios Para Comecar
+## Criterios para decidir o recorte implementavel
 
-Nao implementar imediatamente. Comecar apenas quando:
+Nao implementar imediatamente. A avaliacao pode comecar porque ha dois
+consumidores, mas codigo so sobe quando:
 
-- um **segundo** consumidor precisar de penetracao/MTV; **e**
-- os dois consumirem o calculo do MESMO jeito (mesmo mecanismo), e nao com
-  estrategias de resolucao divergentes — se divergirem, e politica e fica no
-  jogo.
+- as implementacoes de Mario e Zelda forem comparadas linha a linha;
+- um nucleo puro e testavel for identificado, sem politica de jogo;
+- os dois jogos conseguirem consumir a API proposta de forma natural; e
+- a API refletir o mecanismo real observado. `penetration()`/MTV so entra se
+  surgir consumidor real para esse calculo.
 
 ## Criterios de Aceite (quando/se subir)
 
-- [ ] `penetration()`/MTV puro no `collision2d`, opt-in, sem tocar `intersects`.
-- [ ] Testes cobrindo penetracao, nao-penetracao e as BORDAS (encostar).
+- [ ] Recorte puro no `collision2d`, opt-in, sem tocar `intersects` nem assumir
+      uma politica de jogo.
+- [ ] Testes cobrindo os casos reais de Mario e Zelda e as BORDAS (encostar).
 - [ ] **Regra de proveniencia:** os testes de consumidor real citam a origem
       (repo @ commit, arquivo, linha) e transcrevem os valores do jogo.
 - [ ] A engine NAO resolve: nenhuma entidade movida, nenhuma estrategia de eixo
       embutida.
-- [ ] README deixa claro: a engine DETECTA e mede penetracao; RESOLVER e do jogo.
+- [ ] README separa o mecanismo geometrico promovido da estrategia e das
+      consequencias de jogo, que continuam nos consumidores.
 
 ## Riscos
 
@@ -136,5 +175,7 @@ Nao implementar imediatamente. Comecar apenas quando:
 - ADR 0002 - criterio de promocao (2 evidencias, mecanismo x politica).
 - mario-bros, degrau 2 (`.ai/task/02-dominio-andar-pular-cair.md`) - o consumidor
   que resolve eixo-separado; evidencia 1/2.
+- zelda, task 02 (`.ai/task/02-dominio-2-eixos.md`) - o segundo consumidor do
+  eixo-separado; evidencia 2/2.
 - breakout, `World::reflectOff` - resolve reflexao (nao penetracao) no jogo;
   ilustra que "resolver contato" ja apareceu em duas formas DIFERENTES.

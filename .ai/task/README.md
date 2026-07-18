@@ -106,26 +106,29 @@ Ler antes de executar as tarefas de arquitetura:
 | 19 | [FlowRouter: extrair a mecânica da fachada de navegação](19-flow-router-facade.md) ✅ 0.6.0 | 🟢 Baixa (carona) | Arquitetura |
 | 20 | [Vocabulário de input como porta](20-input-vocabulary-port.md) ✅ 0.8.0 | 🟡 Média | Arquitetura |
 | 21 | [`IWindowManager` obrigatório: remover a hipótese do `nullptr`](21-window-manager-mandatory.md) ✅ 0.6.0 | 🟡 Média (breaking, 0.6.0) | Arquitetura |
-| 22 | [Colisão 2D: resolução (penetração/MTV)](22-collision2d-resolution.md) | 🟢 Baixa/Média (estacionada — gate avaliado pelo mario-bros: 1 de 2 evidências, e sinal de que resolver é política) | Arquitetura |
-| 23 | [Câmera / viewport (mundo→tela + culling)](23-camera-viewport.md) | 🟢 Baixa (estacionada — 1 de 2 evidências: mario degrau 4; só a transformada+culling é candidata, o seguimento é feel) | Arquitetura |
+| 22 | [Colisão 2D: resolução (recorte a decidir)](22-collision2d-resolution.md) | 🟢 Baixa/Média (2/2 para eixo-separado: mario + zelda; 0 consumidores de penetração/MTV — comparar antes de promover) | Arquitetura |
+| 23 | [Câmera / viewport (mundo→tela + culling)](23-camera-viewport.md) | 🟡 Baixa/Média (gate disparado 2/2: mario + zelda; extrair só transformada+culling, seguimento fica nos jogos) | Arquitetura |
 | 24 | [Áudio como porta (`play(id)`), backend na plataforma](24-audio-port.md) ✅ 0.9.0 | 🟡 Média (gate disparou com 2/2: breakout + mario@0fab493; mario valida a 0.9.0) | Arquitetura |
 | 25 | [Clip de animação de sprite (frames sobre tempo)](25-sprite-animation-clip.md) | 🟢 Baixa (estacionada — 1 de 2 evidências: mario `PlayerAnimator`; o spaceinvaders anima SEM relógio, sinal de divergência) | Arquitetura |
 
-## Candidatas estacionadas (esperando evidência)
+## Candidatas e estado dos gates
 
-Tasks que **não se implementam ainda**: registram uma candidata a crescer a
-engine para o aprendizado não se perder entre os projetos, com o gate (ADR 0002)
-que precisa disparar antes de começar. Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
+Tasks que registram candidatas a crescer a engine para o aprendizado não se
+perder entre os projetos. Um gate disparado autoriza desenhar a extração; não
+autoriza promover política nem implementar uma API diferente da evidência real.
+Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
 
 - **18 (scene stack/overlays)** — 1/2: breakout ganhou pausa e resolveu com um
   `bool` local. Espera um 2º consumidor que o `bool` não resolva.
-- **22 (resolução de colisão)** — 1/2: mario resolve eixo-separado; breakout
-  resolve reflexão (`reflectOff`) — formas DIFERENTES, sinal de que resolver é
-  política. Espera um 2º consumidor com o MESMO mecanismo.
-- **23 (câmera/viewport)** — 1/2: o mario degrau 4 (commit `4a8f825`) trouxe a
-  câmera. Só a TRANSFORMADA mundo→janela + culling é candidata; o SEGUIMENTO
-  (âncora/limites) é feel e fica no jogo. Espera um 2º consumidor com o mesmo
-  modelo de projeção.
+- **22 (resolução de colisão)** — **2/2 para o padrão eixo-separado**: mario e
+  zelda movem/resolvem X e depois Y. Isso dispara a comparação, mas não a API
+  de penetração/MTV originalmente imaginada, que segue com 0 consumidores. A
+  task permanece estacionada até identificar um núcleo puro que ambos usariam;
+  reflexão do breakout, `grounded`, one-way e dano continuam política.
+- **23 (câmera/viewport)** — **GATE DISPARADO (2/2)**: mario e zelda usam a
+  mesma transformada mundo→janela e o mesmo culling; o Zelda adiciona rolagem
+  vertical sem mudar o mecanismo. A candidata está pronta para desenho da
+  extração. O SEGUIMENTO (âncora/limites/eixos) é feel e fica nos jogos.
 - **24 (áudio como porta)** — **PROMOVIDA (0.9.0, 2026-07-16)**: o gate
   disparou com 2/2 (breakout + mario `0fab493`, cópias quase idênticas — o
   discriminador do input) e a porta subiu: `cengine::audio::Player` com
@@ -169,11 +172,12 @@ estruturalmente parecidas mas **semanticamente diferentes**. Semelhança de form
   original", e foi retunada em playtest); a INTEGRAÇÃO é trivial e cada jogo
   integra diferente (inércia do asteroids, reflexão do breakout, degraus do
   spaceinvaders, eixo-separado do mario); a RESOLUÇÃO já é a task 22, e a
-  evidência aponta contra (breakout e mario resolvem DIFERENTE). Não há duas
-  cópias idênticas de nada — o discriminador do input não dispara. O único
-  recorte mecanismo é a penetração/MTV, que É a task 22; "física na engine"
-  congelaria até o formato de mundo (rampas tipo Sonic estouram o AABB).
-  Reabre se um jogo futuro copiar o `World` do mario quase literalmente.
+  evidência inicialmente apontava contra (breakout e mario resolvem
+  DIFERENTE). O Zelda depois forneceu a segunda evidência do recorte
+  eixo-separado, registrada na task 22, mas não tornou gravidade, pulo,
+  `grounded`, tiles one-way ou dano mecanismos genéricos. "Física na engine"
+  continuaria congelando política e formato de mundo; apenas o núcleo comum de
+  resolução pode ser reavaliado.
 - **`Events` por quadro** (o struct de contadores que o World zera e preenche a
   cada `update` — `brk::Events` no breakout, `mario::Events` no mario) — o
   PADRÃO se repete (fatos, não sons; a cena decide o significado) e deve
@@ -203,6 +207,13 @@ backlog do platform-theforge-common (lá é a casa delas, não aqui): o backend
 XAudio2 da porta de áudio (2 cópias idênticas: breakout + mario) e o escritor
 de DDS dos geradores de atlas (3 cópias idênticas: spaceinvaders + breakout +
 mario). Vetados novos abaixo: `Events` por quadro e formatação de tempo.
+
+Sweep de 2026-07-18 (Zelda tasks 02–03 concluídas): a task 23 atingiu 2/2 e
+está liberada para desenhar a extração de transformada+culling. A task 22
+também chegou a 2/2 para resolução eixo-separada, mas a evidência não usa o MTV
+proposto originalmente; antes de implementar, a candidata precisa ser
+recortada pela comparação Mario×Zelda. Seguimento de câmera e regras de colisão
+continuam nos jogos.
 
 ## Legenda de status
 

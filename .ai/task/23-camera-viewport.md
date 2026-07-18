@@ -1,16 +1,18 @@
 # 23 - Camera / viewport (projecao mundo -> tela + culling)
 
-- **Status:** estacionada - **1 de 2 evidencias** (mario-bros degrau 4 nasceu,
-  2026-07-15). Gate nao disparado: falta um 2o consumidor com o MESMO modelo de
-  projecao. Nao implementar ainda. Ver "Avaliacao do gate".
-- **Prioridade:** baixa - so faz sentido depois de existir um nivel maior que a
-  tela, e de um SEGUNDO consumidor com o mesmo modelo de camera.
+- **Status:** gate disparado - **2 de 2 evidencias** (mario-bros + zelda,
+  2026-07-18). Os dois usam o mesmo mecanismo de transformada mundo->janela e
+  culling; o seguimento continua sendo feel de cada jogo. Pronta para desenho
+  da extracao, ainda nao implementada. Ver "Reavaliacao com o Zelda".
+- **Prioridade:** baixa/media - o criterio de evidencia foi satisfeito; o
+  proximo passo e comparar as duas copias e desenhar a menor API pura que as
+  substitua sem promover o seguimento.
 - **Categoria:** Arquitetura / possivel modulo novo opt-in (ou fica no jogo).
 - **Depende de:** nada estrutural. Depende de EVIDENCIA (consumidores reais).
 - **Breaking:** nao. Nasceria como modulo opt-in (ex.: `cengine::camera2d`) ou
   simplesmente ficaria no jogo — a decisao e do gate.
 
-## Por que esta task existe agora (sem evidencia)
+## Por que esta task nasceu (historico)
 
 O mario-bros foi escolhido, entre os plataformas, **pela fronteira da camera**:
 e a unica lacuna arquitetural que nenhum jogo do ecossistema tocou. 8puzzle,
@@ -52,6 +54,24 @@ a camera). 7 testes de camera no jogo.
 **Novo gate:** comecar quando um **2o** consumidor precisar de projecao/culling
 com o MESMO modelo; o seguimento nunca sobe.
 
+## Reavaliacao com o Zelda (2026-07-18) - gate DISPARADO
+
+O Zelda, task 03, fornece a **2a evidencia real**. Sua masmorra 40x24 excede a
+viewport nos dois eixos; `zelda::Camera` guarda origem e tamanho da janela,
+`visible()` testa o retangulo do mundo contra a area visivel com margem, e a
+cena projeta com `tela = (mundo - camera) * escala + centralizacao`. E o mesmo
+mecanismo do Mario, agora exercido tambem no eixo vertical.
+
+**Evidencia 2/2 registrada:** zelda, task 03 (done e validada jogando),
+`src/zelda/camera/Camera.{h,cpp}` +
+`ForgeGameScene::viewport/drawBox`, com 7 testes de camera.
+
+A variacao confirma o corte previsto: `follow()` e politica — Mario segue em X,
+Zelda segue em X e Y — enquanto origem da viewport, subtracao mundo->janela e
+culling sao iguais. Portanto o gate do ADR 0002 esta satisfeito **somente para
+transformada+culling**. A extracao deve manter ancora, limites e comportamento
+de seguimento nos jogos.
+
 ## Contexto
 
 Hoje a projecao "mundo -> pixels de tela" vive em cada jogo (ex.: o `toScreen`
@@ -64,18 +84,21 @@ transformada mundo -> tela com **deslocamento** (a rolagem), mais **culling** do
 que esta fora do enquadramento. A transformada e pura e reutilizavel; o
 comportamento de COMO a camera se move nao e.
 
-## Objetivo (SE o gate disparar)
+## Objetivo (gate disparado; falta desenhar e executar a extracao)
 
-Oferecer a **transformada mundo -> tela pura** (talvez com culling de retangulos
-visiveis), sem decidir COMO a camera segue o alvo:
+Oferecer o recorte comum observado: origem+tamanho da viewport, transformada
+mundo -> viewport por subtracao e culling de retangulos visiveis, sem decidir
+COMO a camera segue o alvo. Escala, letterbox e centralizacao em pixels ainda
+vivem nas cenas; a comparacao das copias decide se alguma parte tambem pertence
+ao mecanismo:
 
 ```cpp
 namespace cengine::camera2d {
-// Converte um ponto/retangulo do mundo para a tela dado o alvo da camera e o
-// tamanho da viewport. Puro: nao decide para onde a camera olha.
-struct Camera { Vec2 target; float zoom; /* ... */ };
-[[nodiscard]] Vec2 worldToScreen(const Camera&, Vec2 world, Vec2 viewport);
-[[nodiscard]] bool visible(const Camera&, Aabb worldRect, Vec2 viewport);
+// A origem e calculada pelo jogo (follow/deadzone/etc.); este tipo so projeta e
+// consulta visibilidade.
+struct Viewport { Vec2 origin; Vec2 size; float cullMargin; };
+[[nodiscard]] Vec2 worldToView(const Viewport&, Vec2 world);
+[[nodiscard]] bool visible(const Viewport&, Aabb worldRect);
 }
 ```
 
@@ -92,19 +115,18 @@ deadzone, travar nos limites do nivel) — isso e feel, e feel e politica.
 - Parallax, multiplas camadas, split-screen, shake, zoom dinamico.
 - Ownership de entidades ou do alvo.
 
-## Criterios Para Comecar
+## Criterios para comecar
 
-Nao implementar imediatamente. Comecar apenas quando:
+Os criterios de evidencia estao satisfeitos:
 
-- existir um consumidor real com nivel > tela e rolagem (mario degrau 4) — 1a
-  evidencia; **e**
-- um **segundo** consumidor precisar do MESMO modelo de projecao/culling (nao de
-  outro modelo de camera). Se os modelos divergirem, a transformada ate pode
-  subir, mas o SEGUIMENTO fica no jogo.
+- [x] consumidor real com nivel > tela e rolagem: mario-bros, degrau 4;
+- [x] segundo consumidor com o mesmo modelo de projecao/culling: zelda, task 03;
+- [ ] comparar as duas copias e definir a API minima de transformada+culling,
+      deixando todo seguimento nos jogos.
 
 ## Criterios de Aceite (quando/se subir)
 
-- [ ] Transformada mundo -> tela pura (e culling), opt-in, testavel sem GPU.
+- [ ] Transformada mundo -> viewport pura (e culling), opt-in, testavel sem GPU.
 - [ ] **Regra de proveniencia:** testes de consumidor real citam a origem
       (repo @ commit, arquivo, linha) e transcrevem os valores do jogo.
 - [ ] A engine NAO decide para onde a camera olha: nenhum seguimento/deadzone
@@ -115,13 +137,13 @@ Nao implementar imediatamente. Comecar apenas quando:
 ## Riscos
 
 - Promover o SEGUIMENTO (feel) de um jogo como se fosse universal.
-- Construir a camera antes de existir o primeiro nivel que rola (especulacao — o
-  que a ADR 0002 barra). Por isso esta task nasce ESTACIONADA, com 0 evidencias.
+- Alargar o escopo agora que o gate disparou e incluir seguimento, shake ou
+  parallax sem evidencia para esses mecanismos.
 
 ## Relacionado
 
 - ADR 0002 - criterio de promocao (2 evidencias, mecanismo x politica).
-- mario-bros, degrau 4 (a fazer) - sera a evidencia 1/2; a fronteira-titulo do
-  jogo.
+- mario-bros, degrau 4 (done) - evidencia 1/2; a fronteira-titulo do jogo.
+- zelda, task 03 (done) - evidencia 2/2; mesmo modelo em dois eixos.
 - Task 18 (scene stack) - outra candidata que ficou estacionada esperando o caso
   real; mesmo padrao.
