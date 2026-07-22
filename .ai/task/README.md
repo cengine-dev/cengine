@@ -215,6 +215,68 @@ proposto originalmente; antes de implementar, a candidata precisa ser
 recortada pela comparação Mario×Zelda. Seguimento de câmera e regras de colisão
 continuam nos jogos.
 
+Sweep de 2026-07-22 (Star Force completo — sétimo jogo, um shmup de rolagem
+vertical com massa de entidades e roteiro de conteúdo, os dois ângulos que a
+task 06 pediu pra revisar ao fechar):
+
+- **18 (scene stack/overlays)** — sem evidência nova: Star Force não tem
+  pausa. Segue 1/2 (breakout).
+- **22 (resolução de colisão)** — sem evidência nova: o combate é só
+  DETECÇÃO (`collision2d::intersects`, bala mata no primeiro toque, sem
+  empurrão/reflexo/grounded). Star Force não usa resolução eixo-separada
+  nem MTV — não desloca nenhum dos dois lados do gate. Segue 2/2 pro padrão
+  eixo-separado, 0/2 pro MTV, estacionada.
+- **Broadphase de `collision2d` — pergunta fechada, resultado NEGATIVO.** A
+  task 04 do Star Force (`.ai/task/04-roteiro-ondas-combate.md`) tinha um
+  criterio pendente ("dezenas de entidades vivas nos picos sem soluço de
+  frame — nada mediu ainda"). Medido agora pelos números do próprio jogo:
+  11 torretas no total (`Area.cpp`), no máximo ~4 inimigos por entrada do
+  roteiro com no máximo 2 entradas se sobrepondo em tela (`Wave.cpp`,
+  gatilhos a cada ~90 unidades / 30 u/s de scroll ≈ 3s de intervalo), e no
+  máximo ~5 balas da nave simultâneas em voo (cooldown 0.12s × 0.6s de
+  travessia do campo a 300 u/s). `resolveCombat()` é um laço aninhado
+  ingênuo bala×(inimigos+torretas) — no pico, algo como 5×19 ≈ 95 pares
+  por quadro. Isso está muito longe de "dezenas" o bastante pra doer:
+  nenhuma sessão de playtest (3 rodadas completas, tasks 05/06) relatou
+  soluço. **Veredito: este jogo não gera evidência de necessidade de
+  broadphase.** O naive O(n×m) do `collision2d::intersects` continua
+  suficiente pro ecossistema inteiro até agora; a pergunta so volta se um
+  jogo futuro tiver ordens de grandeza a mais de entidades simultâneas
+  (bullet-hell de verdade, multidão de partículas etc.).
+- **Roteiro dirigido por scroll/posição (`WaveScript`, task 04 do
+  Star Force) — observação, SEM task própria ainda (0/2, primeira
+  evidência).** O mecanismo — uma lista ordenada por limiar, `poll(progress)`
+  devolve so as entradas cruzadas desde o último poll, sem redisparar — é
+  genérico o bastante pra ser candidato um dia, mas a carga (`Formation`,
+  `Edge`, contagem) é vocabulário do jogo, mesmo caso já visto em
+  `Events`/`PlaySession`. O próprio código já registra isso (comentário em
+  `Wave.h`: "se um segundo jogo dirigido por roteiro aparecer, o PADRÃO
+  vira candidata"). Nenhum outro jogo do ecossistema tem esse formato
+  (verificado por grep); fica registrado aqui só pra não se perder — não
+  abrir task nova sem o segundo consumidor.
+- **25 (clip de animação) — reforçada, sem promover nada de novo.** O
+  `starforce::ExplosionAnimator` é o 3º consumidor real de `cengine::anim`
+  (depois de mario/zelda), confirmando que SELEÇÃO/vocabulário ficam no
+  jogo. Mas ele também é a PRIMEIRA evidência de uma forma diferente: o
+  `Animator` da engine só sabe fazer loop (o `frame()` embrulha sozinho ao
+  cruzar `frameCount`); a explosão precisa tocar as 3 células UMA VEZ e
+  travar no último frame. O jogo resolveu por fora (wrapper com relógio
+  próprio, `finished()` checado antes de `frame()` pra nunca expor o
+  wrap interno) — decisão deliberada da task 05 de não mexer no
+  `cengine::anim` por um único consumidor. Registrar como observação
+  (1/2 nesta forma especifica de "play once"): se um segundo jogo
+  precisar do mesmo "toca e trava", a comparação decide se um modo
+  `loop=false` no `ClipDesc` vale a pena ou se o wrapper por fora
+  continua sendo a resposta certa.
+- **Áudio: nenhuma evidência nova pra porta** (`cengine::audio::Player`
+  já promovida, 0.9.0) — Star Force é só mais um consumidor de
+  `play(id)`. A receita de "cooldown próprio pro som do tiro pra não
+  encher o pool de 8 vozes durante rajada contínua" é política de
+  APRESENTAÇÃO do jogo (quando chamar `play`), não do backend
+  (`forgeaudio`, que já faz round-robin das 8 vozes por design) — não
+  meche no mecanismo, registrado só como nota pro próximo jogo com tiro
+  automático, se algum precisar do mesmo ajuste.
+
 ## Legenda de status
 
 Marque no topo de cada arquivo conforme avança:
