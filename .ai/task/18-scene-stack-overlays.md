@@ -1,7 +1,9 @@
 # 18 - Scene stack e overlays
 
-- **Status:** estacionada - gate avaliado em 2026-07-14 (breakout) e REPROVADO;
-  1 de 2 evidencias. Ver "Avaliacao do gate".
+- **Status:** estacionada - gate avaliado em 2026-07-14 (breakout, REPROVADO)
+  e em 2026-07-27 (Delve). O Delve cumpriu as TRES condicoes de comportamento
+  do gate, mas segue 1 de 2 evidencias de CODIGO — e desmontou o desenho
+  proposto aqui. Ver "Avaliacao 2026-07-27", que e a que vale.
 - **Prioridade:** baixa/media - so deve subir quando houver consumidor real
   precisando de pause menu, modal, inventario, debug overlay ou telas
   sobrepostas.
@@ -53,6 +55,88 @@ precisa que uma cena de baixo continue rodando (E a propria cena), nao sobrevive
 a troca de cena, nao empilha nada. E ainda menos que o `bool` do breakout —
 reforca o gate em vez de disparar. Segue **1/2**. O caso que a task 18 espera
 (overlay que compoe/sobrevive como camada separada) ainda nao apareceu.
+
+## Avaliacao 2026-07-27 (Delve) - as tres condicoes cumpridas, e o desenho daqui esta errado
+
+O Delve (oitavo jogo, roguelike por turnos) foi escolhido POR esta task e
+escreveu uma pilha de verdade: `delve::LayerStack`, em `src/delve/app/`, com
+cinco tipos de camada (mundo, HUD, pausa, mochila, fim de partida). Ele cumpre
+as tres condicoes do gate novo, sozinho:
+
+- **cena de baixo continua rodando**: o mundo esta DENTRO da pilha como camada
+  de baixo e recebe `update(dt)` com as camadas abertas por cima. Foi preciso
+  um inimigo animado para isso ser VERIFICAVEL — num jogo por turnos, mundo
+  parado e mundo congelado sao identicos na tela;
+- **2+ camadas empilhadas**: ESC abre a pausa, e escolher Inventario empilha a
+  mochila POR CIMA dela, sem fechar;
+- **overlay que sobrevive a troca da cena de baixo**: descer um andar troca a
+  camada de mundo por baixo do HUD (`replaceBottom`), que continua onde estava.
+
+**Mesmo assim: NAO PROMOVE. Falha o criterio 2 do ADR 0002.** O codigo existe
+escrito a mao em UM jogo. A evidencia 1 registrada acima e o `bool m_paused` do
+breakout — evidencia de NECESSIDADE de overlay, contada corretamente como tal,
+mas nao uma segunda implementacao da abstracao: o breakout nunca teve `push`,
+`pop`, ordem de camadas nem propagacao. E isso importa pelo motivo que a Emenda
+1 do ADR 0002 nomeia: dois consumidores forcam a API a ser geral. Toda decisao
+de desenho da `LayerStack` foi tomada por um caso so.
+
+### O consumidor real desmontou o "Desenho Inicial" desta task
+
+Depois de cinco tipos de camada em uso, o `SceneLayerPolicy` proposto abaixo
+nao se sustenta:
+
+- **`updatesBelow`: ZERO evidencia.** O Delve atualiza todas as camadas,
+  sempre. O caso que motivou a flag ("pause menu: `updatesBelow = false`") foi
+  resolvido pelo DOMINIO — o jogo e por turnos, sem input nao ha turno. Mais:
+  congelar pela pilha teria DESTRUIDO a evidencia da primeira condicao do
+  gate, que e a cena de baixo continuar rodando.
+- **`drawsBelow`: ZERO evidencia.** Sempre verdadeiro, nas cinco.
+- **`blocksInputBelow`: apareceu um eixo VIZINHO, com outro formato.** O que o
+  consumidor precisou nao foi "esta camada bloqueia as de baixo?" e sim "**esta
+  camada participa do input?**" — o HUD nao participa. Resolvido como
+  pula-e-para: o input desce ate a primeira camada ATIVA e termina ali.
+  Cascatear (varias camadas verem a mesma tecla) tambem nao tem evidencia.
+- **falta uma operacao: `replaceBottom`.** O desenho tem `replace`/`push`/`pop`
+  e nao expressa a TERCEIRA condicao do proprio gate — trocar a cena de baixo
+  mantendo os overlays.
+
+### O achado que nao estava em desenho nenhum
+
+A regra "todas recebem update e draw, so o TOPO recebe input" e **insuficiente**.
+Ela sobreviveu tres degraus do jogo porque toda camada empilhada queria input.
+O HUD foi a primeira que nao queria: o jogo abriu, animou e nao respondeu a
+tecla nenhuma — e a suite estava VERDE, porque nenhum teste tinha camada
+passiva. Qualquer pilha de cenas aqui bate nisso no primeiro HUD.
+
+### Gate re-armado
+
+Segue estacionada. O que falta NAO e mais comportamento — e um **segundo
+consumidor que escreva a propria pilha**, para a API ser negociada por dois
+casos em vez de ditada por um.
+
+Quando ele aparecer, o desenho a discutir e o que o Delve validou, nao o
+"Desenho Inicial" abaixo:
+
+```cpp
+void push(Layer layer, bool consumesInput = true);
+void pop();
+void replaceBottom(Layer layer);   // troca a cena de baixo, mantem os overlays
+
+void update(Seconds dt);  // TODAS, de baixo para cima
+void draw();              // TODAS, de baixo para cima
+void input();             // a primeira ATIVA do topo, e SO ela
+```
+
+`updatesBelow` e `drawsBelow` saem da proposta ate alguem provar precisar.
+`Layer` e `IScene`: se isto empilha cenas, empilha cenas — o Delve nao
+precisou de um tipo novo.
+
+Referencia: `delve@e6c32bb`, `src/delve/app/LayerStack.{h,cpp}` e a revisao
+completa em `delve/.ai/task/09-revisao-de-candidatas.md`.
+
+> **Nota de leitura:** o "Desenho Inicial" abaixo esta MANTIDO de proposito,
+> como registro do que foi imaginado antes de existir consumidor. A secao
+> acima e a que vale.
 - **Categoria:** Arquitetura / routing
 - **Depende de:** 13 done (Router x Repository separados), 15 done (modo
   hospedado) e 16 done (present no fim do quadro).

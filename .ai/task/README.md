@@ -118,8 +118,13 @@ perder entre os projetos. Um gate disparado autoriza desenhar a extração; não
 autoriza promover política nem implementar uma API diferente da evidência real.
 Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
 
-- **18 (scene stack/overlays)** — 1/2: breakout ganhou pausa e resolveu com um
-  `bool` local. Espera um 2º consumidor que o `bool` não resolva.
+- **18 (scene stack/overlays)** — 1/2 de CÓDIGO, mas as três condições de
+  comportamento já foram cumpridas (Delve, 2026-07-27). Espera um 2º
+  consumidor que **escreva a própria pilha** — o `bool` do breakout é
+  evidência de necessidade, não uma segunda implementação. O desenho a
+  discutir quando o gate disparar **não é mais o da task**: o Delve provou que
+  `updatesBelow`/`drawsBelow` são especulação, que faltava `replaceBottom`, e
+  que "só o topo recebe input" é insuficiente.
 - **22 (resolução de colisão)** — **2/2 para o padrão eixo-separado**: mario e
   zelda movem/resolvem X e depois Y. Isso dispara a comparação, mas não a API
   de penetração/MTV originalmente imaginada, que segue com 0 consumidores. A
@@ -276,6 +281,38 @@ task 06 pediu pra revisar ao fechar):
   (`forgeaudio`, que já faz round-robin das 8 vozes por design) — não
   meche no mecanismo, registrado só como nota pro próximo jogo com tiro
   automático, se algum precisar do mesmo ajuste.
+
+Sweep de 2026-07-27 (Delve completo — oitavo jogo, o primeiro por TURNOS e o
+primeiro escolhido POR uma task desta lista, a 18):
+
+- **18 (scene stack/overlays) — as três condições do gate CUMPRIDAS, e mesmo
+  assim não promove.** O Delve escreveu uma pilha de verdade
+  (`delve::LayerStack`, cinco tipos de camada) e bateu as três: cena de baixo
+  rodando atrás, 2+ camadas simultâneas, e overlay que sobrevive à troca da
+  cena de baixo (descer um andar troca o mundo por baixo do HUD). Falha o
+  **critério 2 do ADR 0002**: o código existe escrito à mão em UM jogo — o
+  `bool` do breakout é evidência de necessidade, não uma segunda
+  implementação, e nada forçou a API a ser geral. **O valor que ficou é outro
+  e é maior: o desenho proposto na task foi desmontado por um consumidor
+  real** — `updatesBelow` e `drawsBelow` têm ZERO evidência (todas as camadas
+  sempre atualizam e desenham; congelar pela pilha teria destruído a evidência
+  da 1ª condição), faltava `replaceBottom`, e a regra "só o topo recebe input"
+  é insuficiente — o primeiro HUD empilhado deixou o jogo inteiro sem resposta,
+  com a suíte verde. Detalhe na própria task 18, seção "Avaliação 2026-07-27".
+- **22 (resolução de colisão) — não tocada.** O Delve não tem colisão nenhuma:
+  movimento é índice de grade e "bater" é comparar coordenadas. Segue 0/2 pro
+  MTV.
+- **25 (clip de animação) — não avança.** O Delve é o 2º consumidor de
+  `cengine::anim` mas usa clip em LOOP (idle de 2 quadros do inimigo). A forma
+  "toca uma vez e trava" que o Star Force registrou continua 1/2.
+- **Turno sobre o `update(dt)` de passo fixo — pergunta fechada, resultado
+  NEGATIVO.** O plano do Delve mandava vigiar se um domínio que só muda de
+  estado em bordas de input forçaria alguma mudança no loop. **Não forçou
+  nada**: a `Dungeon` não vê `dt`, o `update(dt)` das cenas ficou servindo só
+  à animação, e o loop hospedou o gênero sem uma linha alterada. Turno não
+  pede nada do laço de tempo.
+- **`cengine::audio` (0.9.0) e `cengine::anim` (0.10.0) — 3º e 2º consumidores,
+  sem uma linha de mudança.** Confirmam as duas portas num gênero novo.
 
 ## Legenda de status
 
