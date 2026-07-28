@@ -1,0 +1,408 @@
+<title>Retrato do ecossistema — cengine</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --panel: #ffffff;
+    --panel-2: #eef1f5;
+    --line: #dbe0e8;
+    --line-soft: #e8ebf1;
+    --ink: #161a22;
+    --muted: #5d6676;
+    --accent: #a35c28;
+    --accent-soft: #f0e3d8;
+    --good: #2c7360;
+    --good-soft: #dcece7;
+    --warn: #8a6512;
+    --warn-soft: #f2e9d4;
+    --off: #6b7484;
+    --mono: ui-monospace, "Cascadia Mono", "Cascadia Code", Consolas, "DejaVu Sans Mono", monospace;
+    --sans: "Segoe UI", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1117;
+      --panel: #151a23;
+      --panel-2: #1b212c;
+      --line: #262d3a;
+      --line-soft: #1f2632;
+      --ink: #e0e5ef;
+      --muted: #8b95a7;
+      --accent: #d18a52;
+      --accent-soft: #2a2018;
+      --good: #55ac8c;
+      --good-soft: #16261f;
+      --warn: #cda647;
+      --warn-soft: #241f12;
+      --off: #79839a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1117; --panel: #151a23; --panel-2: #1b212c;
+    --line: #262d3a; --line-soft: #1f2632;
+    --ink: #e0e5ef; --muted: #8b95a7;
+    --accent: #d18a52; --accent-soft: #2a2018;
+    --good: #55ac8c; --good-soft: #16261f;
+    --warn: #cda647; --warn-soft: #241f12;
+    --off: #79839a; color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6f8; --panel: #ffffff; --panel-2: #eef1f5;
+    --line: #dbe0e8; --line-soft: #e8ebf1;
+    --ink: #161a22; --muted: #5d6676;
+    --accent: #a35c28; --accent-soft: #f0e3d8;
+    --good: #2c7360; --good-soft: #dcece7;
+    --warn: #8a6512; --warn-soft: #f2e9d4;
+    --off: #6b7484; color-scheme: light;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 52px;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead { display: flex; flex-direction: column; gap: 14px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    font-weight: 600;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .stamp {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    border-left: 2px solid var(--line);
+    padding-left: 12px;
+  }
+  .stamp b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- kpi ---------- */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .kpi { background: var(--panel); padding: 20px 22px; display: flex; flex-direction: column; gap: 4px; }
+  .kpi .n {
+    font-family: var(--mono);
+    font-size: 34px;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+  }
+  .kpi .n small { font-size: 18px; color: var(--muted); font-weight: 400; }
+  .kpi .l { font-size: 13px; color: var(--muted); }
+
+  /* ---------- sections ---------- */
+  section { display: flex; flex-direction: column; gap: 18px; }
+  h2 {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .lede { color: var(--muted); max-width: 66ch; margin: 0; font-size: 15px; }
+  p { margin: 0; max-width: 68ch; }
+  p + p { margin-top: 12px; }
+
+  /* ---------- lineage ---------- */
+  .lineage { display: flex; flex-direction: column; }
+  .rel {
+    display: grid;
+    grid-template-columns: 76px 1fr;
+    gap: 20px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line-soft);
+    align-items: baseline;
+  }
+  .rel:first-child { border-top: 0; }
+  .rel .v {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .rel .body { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 10px; }
+  .rel .mod { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+  .from { color: var(--muted); font-size: 13px; font-family: var(--mono); }
+  .chip {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 2px 8px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    background: var(--panel-2);
+    white-space: nowrap;
+  }
+  .rel .note { flex-basis: 100%; font-size: 13px; color: var(--muted); }
+
+  /* ---------- tables ---------- */
+  .scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  thead th {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    text-align: left;
+    padding: 11px 14px;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  tbody td { padding: 11px 14px; border-top: 1px solid var(--line-soft); background: var(--panel); vertical-align: baseline; }
+  tbody tr:first-child td { border-top: 0; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  td.mono { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+  td.name { font-weight: 600; white-space: nowrap; }
+  .idx { font-family: var(--mono); color: var(--muted); font-size: 12px; }
+  .frozen { font-family: var(--mono); font-size: 11px; color: var(--off); }
+
+  /* ---------- funnel ---------- */
+  .sieves { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .sieve { border: 1px solid var(--line); border-radius: 3px; padding: 20px 22px; background: var(--panel); display: flex; flex-direction: column; gap: 10px; }
+  .sieve .t { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .sieve .big { font-family: var(--mono); font-size: 28px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .sieve p { font-size: 14px; color: var(--muted); }
+  .bar { display: flex; height: 8px; border-radius: 2px; overflow: hidden; background: var(--line); }
+  .bar i { display: block; }
+
+  /* ---------- open items ---------- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .card { border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: 3px; background: var(--panel); padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; }
+  .card h3 { font-family: var(--mono); font-size: 15px; margin: 0; font-weight: 600; }
+  .card p { font-size: 14px; color: var(--muted); }
+  .tag {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 2px;
+  }
+  .tag.ready { background: var(--good-soft); color: var(--good); }
+  .tag.waiting { background: var(--warn-soft); color: var(--warn); }
+
+  /* ---------- vetoed ---------- */
+  .vetoed { display: flex; flex-wrap: wrap; gap: 8px; }
+  .vetoed .chip { color: var(--off); text-decoration: line-through; text-decoration-thickness: 1px; }
+
+  /* ---------- callout ---------- */
+  .callout {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    background: var(--panel);
+    padding: 20px 22px;
+    border-radius: 3px;
+  }
+  .callout .t { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  code { font-family: var(--mono); font-size: .92em; background: var(--panel-2); padding: 1px 5px; border-radius: 2px; }
+  footer { color: var(--muted); font-size: 13px; font-family: var(--mono); border-top: 1px solid var(--line); padding-top: 18px; }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">cengine · platform-theforge-common · 8 jogos</div>
+    <h1>Retrato do ecossistema</h1>
+    <div class="stamp">Atualizado em <b>2026-07-28</b>, após a revisão de candidatas do <b>Delve</b> (8º jogo).</div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n">6</div><div class="l">módulos vivos na engine</div></div>
+    <div class="kpi"><div class="n">7<small> / 9</small></div><div class="l">candidatas de jogo promovidas</div></div>
+    <div class="kpi"><div class="n">12</div><div class="l">releases da cengine</div></div>
+    <div class="kpi"><div class="n">142</div><div class="l">commits somados nos jogos</div></div>
+  </div>
+
+  <section>
+    <h2>Linhagem — quem pariu cada módulo</h2>
+    <p class="lede">Nenhum módulo subiu com menos de dois jogos. Vários subiram porque o código já era literalmente igual nos dois: a duplicação apareceu sozinha e foi recolhida.</p>
+    <div class="lineage">
+      <div class="rel">
+        <div class="v">0.6.0</div>
+        <div class="body">
+          <span class="mod">routing / FlowRouter</span>
+          <span class="from">extraído de</span>
+          <span class="chip">8puzzle</span>
+        </div>
+      </div>
+      <div class="rel">
+        <div class="v">0.6.0</div>
+        <div class="body">
+          <span class="mod">IWindowManager</span>
+          <span class="from">extraído de</span>
+          <span class="chip">8puzzle</span><span class="chip">spaceinvaders</span>
+        </div>
+      </div>
+      <div class="rel">
+        <div class="v">0.7.0</div>
+        <div class="body">
+          <span class="mod">collision2d</span>
+          <span class="from">extraído de</span>
+          <span class="chip">spaceinvaders</span><span class="chip">asteroids</span>
+          <span class="note">O wrap-around da arena ficou no asteroids: topologia do mundo é política do jogo.</span>
+        </div>
+      </div>
+      <div class="rel">
+        <div class="v">0.8.0</div>
+        <div class="body">
+          <span class="mod">input (porta)</span>
+          <span class="from">extraído de</span>
+          <span class="chip">breakout</span>
+          <span class="note">Era a quarta cópia do mesmo enum de teclas no ecossistema.</span>
+        </div>
+      </div>
+      <div class="rel">
+        <div class="v">0.9.0</div>
+        <div class="body">
+          <span class="mod">audio (porta)</span>
+          <span class="from">extraído de</span>
+          <span class="chip">breakout</span><span class="chip">mario-bros</span>
+          <span class="note">Cópias quase idênticas. O backend ficou na plataforma; só <code>play(id)</code> subiu.</span>
+        </div>
+      </div>
+      <div class="rel">
+        <div class="v">0.10.0</div>
+        <div class="body">
+          <span class="mod">camera2d</span>
+          <span class="from">extraído de</span>
+          <span class="chip">mario-bros</span><span class="chip">zelda</span>
+          <span class="note">A transformada mundo→janela era idêntica linha a linha nos dois.</span>
+        </div>
+      </div>
+      <div class="rel">
+        <div class="v">0.10.0</div>
+        <div class="body">
+          <span class="mod">anim</span>
+          <span class="from">extraído de</span>
+          <span class="chip">mario-bros</span><span class="chip">zelda</span>
+          <span class="note">A escolha do clip (Idle/Walk/Attack) é política e ficou nos jogos.</span>
+        </div>
+      </div>
+    </div>
+    <p class="lede">No casco: <code>ForgeUi</code>, <code>ForgeLineUi</code> e <code>ForgeSpriteUi</code> (0.1–0.4), depois <code>forgeaudio</code> e <code>Write-Dds</code> (0.5.0, validados pelo zelda).</p>
+  </section>
+
+  <section>
+    <h2>Os jogos</h2>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr>
+            <th></th><th>jogo</th><th>commits</th><th>último</th><th>cengine</th><th>testes</th><th>fronteira que provou</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="idx">1</td><td class="name">8puzzle</td><td class="num">52</td><td class="mono">07-18</td><td class="mono">0.5.0 <span class="frozen">congelado</span></td><td class="num">2</td><td>routing, modo hospedado</td></tr>
+          <tr><td class="idx">2</td><td class="name">spaceinvaders</td><td class="num">16</td><td class="mono">07-15</td><td class="mono">0.5.0 <span class="frozen">congelado</span></td><td class="num">2</td><td>sprites, colisão (1ª evidência)</td></tr>
+          <tr><td class="idx">3</td><td class="name">asteroids</td><td class="num">16</td><td class="mono">07-18</td><td class="mono">0.8.0</td><td class="num">3</td><td>colisão (2ª evidência)</td></tr>
+          <tr><td class="idx">4</td><td class="name">breakout</td><td class="num">12</td><td class="mono">07-17</td><td class="mono">0.8.0</td><td class="num">3</td><td>porta de input, áudio (1ª)</td></tr>
+          <tr><td class="idx">5</td><td class="name">mario-bros</td><td class="num">11</td><td class="mono">07-17</td><td class="mono">0.9.0</td><td class="num">5</td><td>áudio (2ª), câmera (1ª), anim (1ª)</td></tr>
+          <tr><td class="idx">6</td><td class="name">zelda</td><td class="num">10</td><td class="mono">07-19</td><td class="mono">0.10.0</td><td class="num">5</td><td>câmera (2ª), anim (2ª), IA que navega</td></tr>
+          <tr><td class="idx">7</td><td class="name">starforce</td><td class="num">14</td><td class="mono">07-22</td><td class="mono">0.10.0</td><td class="num">7</td><td>massa de entidades, roteiro por scroll</td></tr>
+          <tr><td class="idx">8</td><td class="name">delve</td><td class="num">11</td><td class="mono">07-28</td><td class="mono">0.10.0</td><td class="num">4</td><td>pilha de camadas, jogo por turnos</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lede">O 8puzzle tem 52 commits porque apanhou junto com a engine nascendo. Do terceiro em diante o custo estabiliza em 11–16 commits por jogo — e essa é a medida mais direta do que a plataforma economiza.</p>
+  </section>
+
+  <section>
+    <h2>As duas peneiras</h2>
+    <p class="lede">O ADR 0002 exige três critérios. Dois deles barram, e os dois estão barrando coisas diferentes.</p>
+    <div class="sieves">
+      <div class="sieve">
+        <div class="t">Critério 2 — dois consumidores</div>
+        <div class="big">2 seguradas</div>
+        <div class="bar"><i style="width:78%;background:var(--good)"></i><i style="width:22%;background:var(--warn)"></i></div>
+        <p>Das 9 candidatas nascidas em jogos, 7 subiram. As 2 paradas esperam um segundo consumidor real — não um argumento.</p>
+      </div>
+      <div class="sieve">
+        <div class="t">Critério 1 — mecanismo × política</div>
+        <div class="big">6 vetadas</div>
+        <div class="bar"><i style="width:100%;background:var(--off)"></i></div>
+        <p>Recusadas por serem vocabulário de jogo, não mecanismo. Marcadas como “não reabrir sem argumento novo”.</p>
+      </div>
+    </div>
+    <div class="vetoed">
+      <span class="chip">Recordes</span>
+      <span class="chip">PlaySession</span>
+      <span class="chip">Wrap-around / toro</span>
+      <span class="chip">Física de plataforma</span>
+      <span class="chip">Events por quadro</span>
+      <span class="chip">Formatação de tempo</span>
+    </div>
+    <p><strong>Events por quadro</strong> é o caso mais instrutivo: zelda e Delve têm os dois, na mesma forma — um struct de bools. Passa no critério 2 e morre no critério 1. Dois consumidores não salvam uma abstração cujo conteúdo é nome de coisa do jogo.</p>
+  </section>
+
+  <section>
+    <h2>O que está aberto</h2>
+    <div class="cards">
+      <div class="card">
+        <span class="tag ready">pronta para extrair</span>
+        <h3>18 — scene stack / overlays</h3>
+        <p>O Delve cumpriu as três condições, escreveu a pilha e validou o desenho — inclusive derrubando duas das três políticas que a task propunha. Espera o consumidor de validação: <strong>o próximo jogo que precisar de camadas extrai esta pilha, não escreve a própria.</strong></p>
+      </div>
+      <div class="card">
+        <span class="tag waiting">0 de 2</span>
+        <h3>22 — resolução de colisão (MTV)</h3>
+        <p>Quatro jogos com colisão e todos resolveram por eixo separado. O caso de penetração/MTV nunca apareceu em nenhum deles.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Leitura</h2>
+    <p>A engine cresceu 6 módulos por extração, nenhum por especulação. O funil tem duas peneiras e as duas trabalham: o critério dos dois consumidores segurou 2 candidatas, e o corte mecanismo × política matou 6.</p>
+    <p>O que está parado é pouco e é recente. A 22 espera um caso que nenhum jogo produziu; a 18 acabou de sair de “estacionada” para “pronta para extrair”.</p>
+    <div class="callout">
+      <div class="t">Ponto cego conhecido</div>
+      <p>O método é enviesado para <strong>extração</strong>, e por isso estruturalmente cego para abstração que só paga se for desenhada antes de existir — uma pilha de cenas é desse tipo. O contrapeso é a fórmula <em>“o próximo jogo extrai, não copia”</em>, que antecipa a extração para o momento do segundo consumidor em vez de esperar a segunda cópia. Tamanho do problema, medido: <strong>uma candidata em nove</strong>.</p>
+    </div>
+  </section>
+
+  <footer>
+    Fonte mantida em <code>cengine/.ai/ecossistema.md</code> — atualizada na revisão de candidatas de cada jogo, junto com o sweep em <code>.ai/task/README.md</code>. Se a data do topo estiver mais velha que o último jogo fechado, o retrato mentiu.
+  </footer>
+
+</div>

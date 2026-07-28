@@ -113,6 +113,11 @@ Ler antes de executar as tarefas de arquitetura:
 
 ## Candidatas e estado dos gates
 
+> O retrato do ecossistema INTEIRO (engine + casco + os 8 jogos, quem pariu
+> cada módulo, o que está aberto e o que foi vetado) vive em
+> [`.ai/ecossistema.md`](../ecossistema.md) — **atualizado junto com o sweep
+> de cada jogo**, na mesma revisão de candidatas que alimenta esta seção.
+
 Tasks que registram candidatas a crescer a engine para o aprendizado não se
 perder entre os projetos. Um gate disparado autoriza desenhar a extração; não
 autoriza promover política nem implementar uma API diferente da evidência real.
