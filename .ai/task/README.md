@@ -133,6 +133,9 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   clique" é espacial, e `IScene::input()` não reporta consumo. Não corrigido
   por ter UM consumidor (critério 2), não por custo de migração — o ADR 0003
   pina os jogos, então um breaking não obrigaria ninguém a migrar.
+  **Revisão do Bulwark (2026-07-28): segue com UM consumidor.** É a dívida
+  declarada do 10º jogo, condicionada: se ele tiver ponteiro, extrai o mouse
+  (27) e corrige o roteamento espacial; se não tiver, a candidata espera.
 - **22 (resolução de colisão)** — **2/2 para o padrão eixo-separado**: mario e
   zelda movem/resolvem X e depois Y. Isso dispara a comparação, mas não a API
   de penetração/MTV originalmente imaginada, que segue com 0 consumidores. A
@@ -147,6 +150,38 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   discriminador do input) e a porta subiu: `cengine::audio::Player` com
   `play(id)` e mais nada, backend segue nas plataformas. É a prova de que uma
   estacionada não é uma recusa: é uma espera com critério.
+- **26 (grade em pixels: célula ↔ pixel)** — **1/2, levantada na revisão do
+  Bulwark (2026-07-28)**. Delve (`@f9cd31b`, `ForgeWorldLayer.cpp:61`) e
+  Bulwark (`ForgeWorldLayer.cpp:38`) escrevem a MESMA conta de grade centrada
+  (`gridW = cols*cell`, `origin = (screen - grid) * 0.5`). Mas pelo precedente
+  da **camera2d** — origem é política do jogo, só a projeção sobe — a metade
+  de IDA que restaria é `origin + col*cell`: uma multiplicação e uma soma, fina
+  demais para virar módulo. A metade que PAGA é a VOLTA (`cellAt`: pixel →
+  célula com rejeição de borda, incluindo o teste de negativo ANTES do cast
+  para `uint32_t`, que é UB) — e essa tem **um** consumidor, porque só o
+  Bulwark tem ponteiro. Mesma candidata que o `screen → world` do degrau 05,
+  vista de outro ângulo. **Vizinhança, não sobreposição:** a `camera2d` declara
+  no cabeçalho que "escala, letterbox e centralização em PIXELS ficam nas
+  cenas" — este candidato mora no espaço que ela recusou de propósito.
+- **27 (mouse como porta de input)** — **1/2**. Vive no `forgeui` do common
+  (0.6.0) com vocabulário local, como o teclado viveu antes da task 20. O
+  discriminador é o histórico: o enum `Key` só subiu na **4ª cópia idêntica**;
+  o mouse tem uma. Fecha junto com a 26 e com o limite espacial da 18 — as
+  três são a mesma aposta, e todas dependem do 10º jogo ter ponteiro.
+- **`Path`/waypoint** — **1/2 e sem task aberta**: busca no ecossistema inteiro
+  não achou outro jogo com movimento por waypoint. Registrado para não se
+  perder; não vira task até existir o segundo.
+- **Pool de efeitos transitórios** — **candidata MORTA na revisão do Bulwark,
+  com argumento.** Star Force e Bulwark mantêm os dois uma lista de efeitos que
+  nasce de evento, envelhece e some — parece 2/2. Não é: **a duplicação real já
+  subiu na 0.12.0** (o embrulho que sabia quando a animação acabou virou
+  `ClipDesc::loop` + `Animator::finished()`). O que sobrou dos dois lados são
+  ~6 linhas de `std::vector`, e nem iguais (swap-and-pop vs `remove_if`), com
+  payloads diferentes (`Vec2` vs distância escalar). **Lição para as próximas
+  revisões: uma promoção bem feita esvazia a próxima candidata — o que sobra
+  parece candidato pela silhueta e já é só idioma. Se não dá para descrever a
+  candidata sem citar `std::vector`, é biblioteca padrão, não engine.**
+
 - **25 (clip de animação de sprite)** — 1/2: o mario trouxe o `PlayerAnimator`
   (ciclo de frames dirigido pelo TEMPO: clip = frames + fps + loop). O
   spaceinvaders anima SEM relógio (a pose deriva do passo da marcha,
@@ -198,6 +233,22 @@ estruturalmente parecidas mas **semanticamente diferentes**. Semelhança de form
   cada jogo (tijolos/vidas/fase vs pulo/moeda/pisão/bandeira). Mesmo caso do
   `PlaySession`: struct de valor, não mecanismo. O padrão é disciplina de
   projeto, documentada nas tasks dos jogos; não vira tipo da engine.
+
+  **Emenda (revisão do Bulwark, 2026-07-28) — a disciplina ganhou uma REGRA:
+  quem para de atualizar também tem de parar de reportar.** Dois jogos pagaram
+  por ela, por caminhos diferentes: no Delve os eventos ficavam pendurados
+  entre turnos (resolvido com o `turnCount` do `Dungeon`); no Bulwark
+  `Match::update` parava o campo ao fim da partida e, com isso, parava de
+  LIMPAR os eventos dele — o abate do último quadro congelava preenchido e o
+  som tocava para sempre (`m_field.clearEvents()` na saída). Um problema só:
+  **o tempo de vida do evento está amarrado ao do `update`, e todo lugar onde o
+  `update` para é um lugar onde o evento mente.** Continua não virando tipo da
+  engine — os campos seguem sendo vocabulário do jogo. Vira teste-padrão que
+  todo jogo com eventos deveria ter e nenhum tinha: *depois do fim, os eventos
+  estão vazios* (`AFinishedMatchStopsReportingFieldEvents`, no Bulwark).
+  Detalhe que explica por que nenhuma suíte pegou antes: testes de fim de
+  partida leem ESTADO (vida, entidades paradas), e estado parado está certo —
+  **o bug só existe quando aparece o primeiro leitor de EVENTO.**
 - **Formatação de tempo** — o common já tem `formatMillis` (hh:mm:ss.mmm, do
   8puzzle) e o mario criou `ui::formatTime` (M:SS.cc) SEM reusar: os formatos
   divergem de propósito (cronômetro de puzzle vs HUD de arcade). Formato de
