@@ -47,6 +47,22 @@ public:
     ///       depois de `frame()` retornar.
     virtual void present() = 0;
 
+    /// A PLATAFORMA pede para encerrar — o usuário fechou a janela (o X, o
+    /// alt-F4, o gerenciador de janelas). O loop do modo próprio para no fim
+    /// do quadro, e o `cleanup()` roda normalmente.
+    ///
+    /// NÃO é pura: quem não tem janela para fechar (terminal) herda o `false`
+    /// e não muda uma linha. Foi adicionada na 0.13.0 porque faltava um
+    /// caminho para isso: até então o único jeito de o loop terminar era o
+    /// JOGO rotear para "exit", e a ponte do The-Forge contornava empurrando
+    /// um `Escape` falso na fila de teclas quando o X era clicado. Num jogo em
+    /// que ESC significa "voltar ao menu", fechar a janela levava ao menu.
+    ///
+    /// A distinção que faltava: "o jogador pediu para sair" (decisão de jogo,
+    /// `IGameManager::shouldExit`) e "o sistema mandou fechar" (fato da
+    /// plataforma) não são a mesma coisa e não devem passar pelo mesmo canal.
+    [[nodiscard]] virtual bool shouldClose() const { return false; }
+
     /// Destrói a janela e libera recursos gráficos. Chamado uma vez, ao sair.
     virtual void cleanup() = 0;
 };

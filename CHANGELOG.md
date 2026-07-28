@@ -5,6 +5,32 @@ All notable changes to CEngine are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-07-28
+
+A janela ganha voz para encerrar o loop: **`IWindowManager::shouldClose()`**.
+
+> **Nao e breaking.** O metodo NAO e virtual puro — nasce devolvendo `false`,
+> entao quem nao tem janela para fechar (terminal) herda e nao muda uma linha.
+
+### Added
+
+- **`IWindowManager::shouldClose()`**: a plataforma avisa que o usuario fechou
+  a janela (X, alt-F4). O loop do modo proprio para no fim do quadro, DEPOIS
+  do `present()` — o quadro ja desenhado e apresentado — e o `cleanup()` roda
+  normalmente, igual ao `shouldExit` do jogo.
+
+### O buraco que isto fecha
+
+Ate aqui o UNICO jeito de o loop terminar era o JOGO rotear para "exit". A
+ponte do The-Forge contornava empurrando um `Escape` FALSO na fila de teclas
+quando o X era clicado, e isso funcionava por sorte: so nos jogos em que ESC
+ja significava "sair". Nos que usam ESC para "voltar ao menu" — o Delve e o
+Bulwark — clicar no X levava ao MENU.
+
+A distincao que faltava: **"o jogador pediu para sair" (decisao de jogo) e "o
+sistema mandou fechar" (fato da plataforma) nao sao a mesma coisa** e nao
+podem dividir o mesmo canal. Reportado pelo dono jogando o Bulwark.
+
 ## [0.12.0] - 2026-07-28
 
 Fecha a task 25 em **2/2**: `ClipDesc::loop` e `Animator::finished()`.

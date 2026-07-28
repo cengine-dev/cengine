@@ -113,6 +113,13 @@ void EngineManager::run() {
         m_isRunning = frame(frameTime);
 
         m_windowManager->present();
+
+        // A janela tem voz para encerrar, e ela e ouvida DEPOIS do present:
+        // o quadro que ja foi desenhado e apresentado antes de sair, mesma
+        // regra do shouldExit do jogo.
+        if (m_windowManager->shouldClose()) {
+            m_isRunning = false;
+        }
     }
     cleanup();
 }

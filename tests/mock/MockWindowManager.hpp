@@ -10,4 +10,5 @@ public:
     MOCK_METHOD(void, update, (), (override));
     MOCK_METHOD(void, present, (), (override));
     MOCK_METHOD(void, cleanup, (), (override));
+    MOCK_METHOD(bool, shouldClose, (), (const, override));
 };

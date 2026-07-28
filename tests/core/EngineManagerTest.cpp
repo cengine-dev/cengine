@@ -308,3 +308,63 @@ TEST(EngineManagerConstructionTest, StartOnHostedEngineThrows) {
     auto engine = EngineManager::hosted(std::make_unique<MockGameManager>());
     EXPECT_THROW(engine.start(), std::logic_error);
 }
+
+// ------------------------------------------------------------------
+// Fechar a janela (0.13.0): a PLATAFORMA tambem pode encerrar.
+//
+// Antes disto o unico caminho para o loop terminar era o JOGO rotear para
+// "exit", e a ponte do The-Forge contornava empurrando um `Escape` falso na
+// fila de teclas quando o X era clicado — num jogo em que ESC significa
+// "voltar ao menu", fechar a janela levava ao menu.
+// ------------------------------------------------------------------
+
+TEST(EngineManagerShouldCloseTest, TheWindowCanEndTheLoopWithoutTheGameAskingToExit) {
+    auto windowManager = std::make_unique<MockWindowManager>();
+    auto gameManager = std::make_unique<MockGameManager>();
+    MockWindowManager* window = windowManager.get();
+    MockGameManager*   game = gameManager.get();
+
+    EXPECT_CALL(*window, init()).Times(1);
+    EXPECT_CALL(*window, update()).Times(1);
+    EXPECT_CALL(*window, present()).Times(1);
+    EXPECT_CALL(*window, cleanup()).Times(1);
+    EXPECT_CALL(*window, shouldClose()).WillRepeatedly(testing::Return(true));
+
+    EXPECT_CALL(*game, onEnter()).Times(1);
+    EXPECT_CALL(*game, input()).Times(1);
+    EXPECT_CALL(*game, render()).Times(1);
+    EXPECT_CALL(*game, onExit()).Times(1);
+    EXPECT_CALL(*game, cleanup()).Times(1);
+
+    // O jogo NUNCA pede para sair: quem encerra e a janela.
+    EXPECT_CALL(*game, shouldExit()).WillRepeatedly(testing::Return(false));
+
+    auto engine = EngineManager::owned(std::move(windowManager), std::move(gameManager));
+    engine.start(); // se a janela nao fosse ouvida, isto nao retornaria
+}
+
+TEST(EngineManagerShouldCloseTest, TheFrameAlreadyDrawnIsPresentedBeforeClosing) {
+    auto windowManager = std::make_unique<MockWindowManager>();
+    auto gameManager = std::make_unique<MockGameManager>();
+    MockWindowManager* window = windowManager.get();
+    MockGameManager*   game = gameManager.get();
+
+    testing::InSequence order;
+    EXPECT_CALL(*window, init()).Times(1);
+    EXPECT_CALL(*window, update()).Times(1);
+    EXPECT_CALL(*game, onEnter()).Times(1);
+    EXPECT_CALL(*game, input()).Times(1);
+    EXPECT_CALL(*game, render()).Times(1);
+    EXPECT_CALL(*game, onExit()).Times(1);
+    EXPECT_CALL(*game, shouldExit()).WillOnce(testing::Return(false));
+
+    // O present vem ANTES de o pedido de fechar ser ouvido: o quadro que ja
+    // foi desenhado aparece, mesma regra do shouldExit do jogo.
+    EXPECT_CALL(*window, present()).Times(1);
+    EXPECT_CALL(*window, shouldClose()).WillOnce(testing::Return(true));
+    EXPECT_CALL(*game, cleanup()).Times(1);
+    EXPECT_CALL(*window, cleanup()).Times(1);
+
+    auto engine = EngineManager::owned(std::move(windowManager), std::move(gameManager));
+    engine.start();
+}
