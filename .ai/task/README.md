@@ -118,13 +118,13 @@ perder entre os projetos. Um gate disparado autoriza desenhar a extração; não
 autoriza promover política nem implementar uma API diferente da evidência real.
 Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
 
-- **18 (scene stack/overlays)** — 1/2 de CÓDIGO, mas as três condições de
-  comportamento já foram cumpridas (Delve, 2026-07-27). Espera um 2º
-  consumidor que **escreva a própria pilha** — o `bool` do breakout é
-  evidência de necessidade, não uma segunda implementação. O desenho a
-  discutir quando o gate disparar **não é mais o da task**: o Delve provou que
-  `updatesBelow`/`drawsBelow` são especulação, que faltava `replaceBottom`, e
-  que "só o topo recebe input" é insuficiente.
+- **18 (scene stack/overlays)** — **PRONTA PARA EXTRAIR, esperando consumidor
+  de validação** (mesmo estado de `forgeaudio`/`Write-Dds` antes de subirem). O
+  Delve (2026-07-27) cumpriu as três condições, escreveu a pilha e validou o
+  desenho — provou que `updatesBelow`/`drawsBelow` são especulação, que faltava
+  `replaceBottom`, e que "só o topo recebe input" é insuficiente. **O próximo
+  jogo que precisar de camadas EXTRAI a pilha do Delve; não escreve a própria**
+  — mandá-lo reescrever seria mandá-lo redescobrir o bug da camada passiva.
 - **22 (resolução de colisão)** — **2/2 para o padrão eixo-separado**: mario e
   zelda movem/resolvem X e depois Y. Isso dispara a comparação, mas não a API
   de penetração/MTV originalmente imaginada, que segue com 0 consumidores. A
@@ -286,13 +286,14 @@ Sweep de 2026-07-27 (Delve completo — oitavo jogo, o primeiro por TURNOS e o
 primeiro escolhido POR uma task desta lista, a 18):
 
 - **18 (scene stack/overlays) — as três condições do gate CUMPRIDAS, e mesmo
-  assim não promove.** O Delve escreveu uma pilha de verdade
+  assim não promove AINDA.** O Delve escreveu uma pilha de verdade
   (`delve::LayerStack`, cinco tipos de camada) e bateu as três: cena de baixo
   rodando atrás, 2+ camadas simultâneas, e overlay que sobrevive à troca da
-  cena de baixo (descer um andar troca o mundo por baixo do HUD). Falha o
-  **critério 2 do ADR 0002**: o código existe escrito à mão em UM jogo — o
-  `bool` do breakout é evidência de necessidade, não uma segunda
-  implementação, e nada forçou a API a ser geral. **O valor que ficou é outro
+  cena de baixo (descer um andar troca o mundo por baixo do HUD). Falta o
+  **consumidor de validação** do critério 2 do ADR 0002 — mas ele vem por
+  EXTRAÇÃO, não por uma segunda cópia manual: o próximo jogo que precisar de
+  camadas extrai esta pilha e a exercita, como `forgeaudio` e `Write-Dds`
+  fizeram. **O valor que ficou é outro
   e é maior: o desenho proposto na task foi desmontado por um consumidor
   real** — `updatesBelow` e `drawsBelow` têm ZERO evidência (todas as camadas
   sempre atualizam e desenham; congelar pela pilha teria destruído a evidência

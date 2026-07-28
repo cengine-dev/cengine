@@ -1,9 +1,11 @@
 # 18 - Scene stack e overlays
 
-- **Status:** estacionada - gate avaliado em 2026-07-14 (breakout, REPROVADO)
-  e em 2026-07-27 (Delve). O Delve cumpriu as TRES condicoes de comportamento
-  do gate, mas segue 1 de 2 evidencias de CODIGO — e desmontou o desenho
-  proposto aqui. Ver "Avaliacao 2026-07-27", que e a que vale.
+- **Status:** PRONTA PARA EXTRAIR, esperando consumidor de validacao (mesmo
+  estado em que `forgeaudio` e `Write-Dds` ficaram antes de subir). O Delve
+  (2026-07-27) cumpriu as tres condicoes do gate, escreveu a pilha e validou o
+  desenho — inclusive derrubando duas das tres politicas propostas aqui. O
+  proximo jogo que precisar de camadas EXTRAI esta pilha; nao escreve a
+  propria. Ver "Avaliacao 2026-07-27", que e a que vale.
 - **Prioridade:** baixa/media - so deve subir quando houver consumidor real
   precisando de pause menu, modal, inventario, debug overlay ou telas
   sobrepostas.
@@ -108,14 +110,35 @@ O HUD foi a primeira que nao queria: o jogo abriu, animou e nao respondeu a
 tecla nenhuma — e a suite estava VERDE, porque nenhum teste tinha camada
 passiva. Qualquer pilha de cenas aqui bate nisso no primeiro HUD.
 
-### Gate re-armado
+### Gate re-armado — CORRIGIDO em 2026-07-27, no mesmo dia
 
-Segue estacionada. O que falta NAO e mais comportamento — e um **segundo
-consumidor que escreva a propria pilha**, para a API ser negociada por dois
-casos em vez de ditada por um.
+A primeira redacao desta secao dizia que faltava "um segundo consumidor que
+**escreva a propria pilha**". Isso estava errado, e o erro e caro: mandava o
+proximo jogo reescrever o que ja existe e **redescobrir do zero** o bug da
+camada passiva (abaixo), que custou um jogo inteiro travado sem responder a
+tecla nenhuma.
 
-Quando ele aparecer, o desenho a discutir e o que o Delve validou, nao o
-"Desenho Inicial" abaixo:
+O ecossistema ja tem a formula certa e ela nao foi aplicada aqui: e a das
+tasks 05 e 06 do `platform-theforge-common` — *"o proximo jogo EXTRAI, nao
+copia"*. Foi assim que o `forgeaudio` e o `Write-Dds` subiram: ficaram
+registrados com a evidencia dada, **esperando um consumidor de validacao**, e
+a extracao aconteceu JUNTO com ele.
+
+**Estado correto desta task:**
+
+> A evidencia de DESENHO esta dada (o Delve cumpriu as tres condicoes e
+> validou a API, inclusive pelo que ela NAO precisa ter). O que falta e o
+> **consumidor de validacao**: o proximo jogo que precisar de camadas
+> **extrai esta pilha** para `cengine::routing` e a exercita — nao escreve a
+> propria. Se na adaptacao a API nao servir, e ali que ela muda, que e onde a
+> pressao de um segundo caso e util.
+
+O criterio 2 do ADR 0002 continua valendo: nada sobe sem um segundo consumidor
+exercitando o resultado. O que muda e a FORMA de obte-lo — extracao validada
+em vez de duas copias manuais. Isso nao afrouxa o ADR; e o mesmo caminho que
+duas tasks ja percorreram neste ecossistema.
+
+O desenho a extrair e o que o Delve validou, NAO o "Desenho Inicial" abaixo:
 
 ```cpp
 void push(Layer layer, bool consumesInput = true);
