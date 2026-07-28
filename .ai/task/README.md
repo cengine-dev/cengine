@@ -110,6 +110,8 @@ Ler antes de executar as tarefas de arquitetura:
 | 23 | [Câmera / viewport (mundo→tela + culling)](23-camera-viewport.md) | ✅ done (0.10.0 — `cengine::camera2d`: transformada+culling; seguimento ficou nos jogos; zelda valida, mario pinado 0.9.0) | Arquitetura |
 | 24 | [Áudio como porta (`play(id)`), backend na plataforma](24-audio-port.md) ✅ 0.9.0 | 🟡 Média (gate disparou com 2/2: breakout + mario@0fab493; mario valida a 0.9.0) | Arquitetura |
 | 25 | [Clip de animação de sprite (frames sobre tempo)](25-sprite-animation-clip.md) | ✅ done (0.10.0 — `cengine::anim`: máquina clip+frame+acumulador; seleção/vocabulário ficam nos jogos; zelda valida, mario pinado 0.9.0; spaceinvaders segue sem linkar — opt-in) | Arquitetura |
+| 26 | [Grade em pixels: célula ↔ pixel](26-grid-pixel-mapping.md) | 🟢 Baixa/Média (**1/2 na metade que paga** — a ida tem 2 consumidores e é fina demais; a volta tem 1) | Arquitetura |
+| 27 | [Mouse como porta de input](27-mouse-vocabulary-port.md) | 🟡 Média (**1/2** — o enum `Key` só subiu na 4ª cópia idêntica; o mouse tem 1) | Arquitetura |
 
 ## Candidatas e estado dos gates
 
@@ -150,7 +152,7 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   discriminador do input) e a porta subiu: `cengine::audio::Player` com
   `play(id)` e mais nada, backend segue nas plataformas. É a prova de que uma
   estacionada não é uma recusa: é uma espera com critério.
-- **26 (grade em pixels: célula ↔ pixel)** — **1/2, levantada na revisão do
+- **[26 (grade em pixels: célula ↔ pixel)](26-grid-pixel-mapping.md)** — **1/2, levantada na revisão do
   Bulwark (2026-07-28)**. Delve (`@f9cd31b`, `ForgeWorldLayer.cpp:61`) e
   Bulwark (`ForgeWorldLayer.cpp:38`) escrevem a MESMA conta de grade centrada
   (`gridW = cols*cell`, `origin = (screen - grid) * 0.5`). Mas pelo precedente
@@ -163,7 +165,7 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   vista de outro ângulo. **Vizinhança, não sobreposição:** a `camera2d` declara
   no cabeçalho que "escala, letterbox e centralização em PIXELS ficam nas
   cenas" — este candidato mora no espaço que ela recusou de propósito.
-- **27 (mouse como porta de input)** — **1/2**. Vive no `forgeui` do common
+- **[27 (mouse como porta de input)](27-mouse-vocabulary-port.md)** — **1/2**. Vive no `forgeui` do common
   (0.6.0) com vocabulário local, como o teclado viveu antes da task 20. O
   discriminador é o histórico: o enum `Key` só subiu na **4ª cópia idêntica**;
   o mouse tem uma. Fecha junto com a 26 e com o limite espacial da 18 — as
