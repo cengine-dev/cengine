@@ -1,11 +1,10 @@
 # 18 - Scene stack e overlays
 
-- **Status:** PRONTA PARA EXTRAIR, esperando consumidor de validacao (mesmo
-  estado em que `forgeaudio` e `Write-Dds` ficaram antes de subir). O Delve
-  (2026-07-27) cumpriu as tres condicoes do gate, escreveu a pilha e validou o
-  desenho — inclusive derrubando duas das tres politicas propostas aqui. O
-  proximo jogo que precisar de camadas EXTRAI esta pilha; nao escreve a
-  propria. Ver "Avaliacao 2026-07-27", que e a que vale.
+- **Status:** **done (0.11.0, 2026-07-28)** — `cengine::routing::SceneStack`,
+  EXTRAIDA do `delve::LayerStack` (delve@f9cd31b) com o **Bulwark** (degrau 06)
+  como consumidor de validacao. Duas das tres politicas propostas aqui NAO
+  subiram, por falta de evidencia; uma operacao que faltava (`replaceBottom`)
+  subiu. Ver "Avaliacao 2026-07-27" e "Extracao 2026-07-28".
 - **Prioridade:** baixa/media - so deve subir quando houver consumidor real
   precisando de pause menu, modal, inventario, debug overlay ou telas
   sobrepostas.
@@ -160,6 +159,47 @@ completa em `delve/.ai/task/09-revisao-de-candidatas.md`.
 > **Nota de leitura:** o "Desenho Inicial" abaixo esta MANTIDO de proposito,
 > como registro do que foi imaginado antes de existir consumidor. A secao
 > acima e a que vale.
+
+## Extracao 2026-07-28 (0.11.0) — feita, e o que ela ensinou
+
+A pilha subiu como `cengine::routing::SceneStack`, extraida em vez de
+reescrita: classe e testes vieram do Delve e foram ADAPTADOS (namespace,
+nome), nao redigitados. O Bulwark e o consumidor de validacao — ele adaptou
+o que ja existia, e foi na adaptacao que a API levou a pressao de um segundo
+caso, que era o ponto do criterio 2 do ADR 0002.
+
+O que a comparacao com o "Desenho Inicial" confirmou, agora com dois
+consumidores:
+
+- `updatesBelow` e `drawsBelow` seguem sem NENHUMA evidencia e nao subiram;
+- `blocksInputBelow` subiu com outra forma (`consumesInput` — "esta camada
+  participa do input?"), que e o eixo que os dois jogos precisaram;
+- `replaceBottom`, que nao estava no desenho, subiu: e a terceira condicao do
+  proprio gate.
+
+### O limite que a extracao expos, e que NAO foi corrigido
+
+A regra "so a primeira camada ATIVA do topo recebe input" e **correta para
+overlay MODAL** (pausa, dialogo) e **insuficiente para overlay clicavel
+NAO-MODAL** — um painel lateral que se clica enquanto o jogo roda embaixo.
+
+Com teclado a pergunta nem aparece. Com PONTEIRO ela vira espacial: o clique
+caiu no painel ou no mapa? A pilha nao tem como saber, porque
+`core::IScene::input()` nao reporta se consumiu o evento.
+
+Nao foi corrigido de proposito, e o motivo NAO e custo de migracao — este
+argumento apareceu numa primeira redacao e estava errado. O ADR 0003 pina os
+consumidores em versoes especificas: um breaking no `IScene` numa 0.12.0 nao
+obrigaria jogo nenhum a migrar. O motivo verdadeiro e o criterio 2 do ADR
+0002: UM consumidor precisou disto, e uma API desenhada por um caso so tem o
+formato daquele caso. O Bulwark resolveu localmente — compara o clique com a area do
+painel antes de traduzir para celula. **Se um segundo jogo bater no mesmo
+ponto, a comparacao decide** se o `input()` passa a reportar consumo ou se a
+solucao local continua sendo a resposta certa.
+
+Vale notar de onde esse limite veio: o Delve so tinha overlays MODAIS (pausa
+e inventario), e por isso a regra pareceu completa la. Foi o mouse do Bulwark
+que produziu o caso — o que era a aposta registrada no plano dele.
 - **Categoria:** Arquitetura / routing
 - **Depende de:** 13 done (Router x Repository separados), 15 done (modo
   hospedado) e 16 done (present no fim do quadro).

@@ -5,6 +5,64 @@ All notable changes to CEngine are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-07-28
+
+A promocao que a task 18 esperava desde 2026-07-14: **`cengine::routing::SceneStack`**,
+cenas EMPILHADAS. Nao foi desenhada aqui — foi **extraida** do
+`delve::LayerStack` (delve@f9cd31b), com o Bulwark como consumidor de
+validacao.
+
+> **Nao e breaking.** `SceneStack` e nova; nada existente mudou. O `IRouter`
+> segue trocando uma cena por vez, e quem nao empilha nao paga nada.
+
+### Added
+
+- **`cengine::routing::SceneStack`**: `push(layer, consumesInput = true)`,
+  `pop()`, `replaceBottom(layer)`, `isTop(layer)`, mais `update`/`draw`/`input`.
+  A camada e `core::IScene` — isto empilha CENAS, nao um tipo novo.
+
+  A regra: `update(dt)` e `draw()` chegam em TODAS as camadas, de baixo para
+  cima; `input()` chega SO na primeira camada ATIVA a partir do topo.
+
+### Sobre o desenho, e o que NAO subiu
+
+O desenho que a task 18 imaginava antes de existir consumidor tinha tres
+politicas por camada: `blocksInputBelow`, `updatesBelow`, `drawsBelow`.
+Depois de cinco tipos de camada em uso real (mundo, HUD, pausa, mochila, fim
+de partida):
+
+- **`updatesBelow` e `drawsBelow` nao subiram**: zero evidencia. Nenhuma
+  camada precisou parar as de baixo. O caso que motivava a flag ("a pausa
+  congela o jogo") foi resolvido pelo DOMINIO do consumidor, e congelar pela
+  pilha teria destruido a evidencia do proprio gate — que e a cena de baixo
+  continuar rodando.
+- **`blocksInputBelow` apareceu com outra forma**: nao "esta camada bloqueia
+  as de baixo?" e sim **"esta camada PARTICIPA do input?"** — que e o
+  `consumesInput`. Um HUD desenha por cima e nao quer tecla nenhuma; sem esse
+  eixo, o primeiro HUD empilhado deixa o jogo inteiro sem resposta (aconteceu
+  no Delve, com a suite verde, porque nenhum teste tinha camada passiva).
+- **`replaceBottom` NAO estava no desenho** e era a terceira condicao do
+  proprio gate: trocar a cena de baixo mantendo os overlays.
+
+### Limite conhecido
+
+A regra "so a primeira camada ATIVA do topo recebe input" e correta para
+overlay MODAL (pausa, dialogo, menu que para o jogo) e **insuficiente para
+overlay clicavel NAO-modal** — um painel lateral que se clica enquanto o jogo
+roda embaixo. Com teclado a pergunta nao aparece; com PONTEIRO ela vira
+espacial ("o clique caiu no painel ou no mapa?"), e a pilha nao tem como
+saber, porque `IScene::input()` nao reporta se consumiu.
+
+Registrado como limite, nao corrigido — e o motivo NAO e custo de migracao.
+Uma primeira redacao disto dizia "mudar o contrato do `IScene` que 9 jogos
+implementam", e isso estava errado: o ADR 0003 pina os consumidores em
+versoes especificas, entao um breaking na 0.12.0 nao obrigaria ninguem a
+migrar. O motivo verdadeiro e o criterio 2 do ADR 0002, o de sempre: UM
+consumidor precisou disto, e uma API desenhada por um caso so tem o formato
+daquele caso. O Bulwark resolveu localmente (compara o clique com a area do
+painel antes de traduzir para celula). Se um segundo jogo bater no mesmo
+ponto, a comparacao decide o formato — e ai o breaking se paga.
+
 ## [0.10.0] - 2026-07-19
 
 Two promotions in one release, both **opt-in**, both with the ADR 0002 gate

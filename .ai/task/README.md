@@ -102,7 +102,7 @@ Ler antes de executar as tarefas de arquitetura:
 | 15 | [Modo hospedado: dirigir o loop de fora (`frame(dt)`)](15-hosted-loop-mode.md) | 🟡 Média | Arquitetura |
 | 16 | [Fim do quadro na janela: `IWindowManager::present()`](16-window-present-hook.md) | 🟡 Média | Arquitetura |
 | 17 | [Colisão 2D: detecção opt-in (AABB + círculo)](17-collision2d-detection.md) ✅ 0.7.0 | 🟡 Média | Arquitetura |
-| 18 | [Scene stack e overlays](18-scene-stack-overlays.md) | 🟢 Baixa/Média (estacionada — gate avaliado pelo breakout: 1 de 2 evidências) | Arquitetura |
+| 18 | [Scene stack e overlays](18-scene-stack-overlays.md) ✅ 0.11.0 | 🟡 Média (extraída do Delve, validada pelo Bulwark) | Arquitetura |
 | 19 | [FlowRouter: extrair a mecânica da fachada de navegação](19-flow-router-facade.md) ✅ 0.6.0 | 🟢 Baixa (carona) | Arquitetura |
 | 20 | [Vocabulário de input como porta](20-input-vocabulary-port.md) ✅ 0.8.0 | 🟡 Média | Arquitetura |
 | 21 | [`IWindowManager` obrigatório: remover a hipótese do `nullptr`](21-window-manager-mandatory.md) ✅ 0.6.0 | 🟡 Média (breaking, 0.6.0) | Arquitetura |
@@ -123,13 +123,16 @@ perder entre os projetos. Um gate disparado autoriza desenhar a extração; não
 autoriza promover política nem implementar uma API diferente da evidência real.
 Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
 
-- **18 (scene stack/overlays)** — **PRONTA PARA EXTRAIR, esperando consumidor
-  de validação** (mesmo estado de `forgeaudio`/`Write-Dds` antes de subirem). O
-  Delve (2026-07-27) cumpriu as três condições, escreveu a pilha e validou o
-  desenho — provou que `updatesBelow`/`drawsBelow` são especulação, que faltava
-  `replaceBottom`, e que "só o topo recebe input" é insuficiente. **O próximo
-  jogo que precisar de camadas EXTRAI a pilha do Delve; não escreve a própria**
-  — mandá-lo reescrever seria mandá-lo redescobrir o bug da camada passiva.
+- **18 (scene stack/overlays)** — **PROMOVIDA (0.11.0, 2026-07-28)**:
+  `cengine::routing::SceneStack`, EXTRAÍDA do `delve::LayerStack` com o
+  Bulwark como consumidor de validação. Duas das três políticas do desenho
+  original não subiram (zero evidência em dois consumidores) e uma operação
+  que faltava subiu (`replaceBottom`). **Limite registrado:** a regra "só a
+  primeira camada ativa do topo recebe input" é correta para overlay MODAL e
+  insuficiente para overlay clicável NÃO-modal — com ponteiro, "quem recebe o
+  clique" é espacial, e `IScene::input()` não reporta consumo. Não corrigido
+  por ter UM consumidor (critério 2), não por custo de migração — o ADR 0003
+  pina os jogos, então um breaking não obrigaria ninguém a migrar.
 - **22 (resolução de colisão)** — **2/2 para o padrão eixo-separado**: mario e
   zelda movem/resolvem X e depois Y. Isso dispara a comparação, mas não a API
   de penetração/MTV originalmente imaginada, que segue com 0 consumidores. A

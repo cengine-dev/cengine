@@ -6,6 +6,7 @@ add_library(cengine_routing STATIC
     src/GameManager.cpp
     src/RouterInMemory.cpp
     src/SceneRepository.cpp
+    src/SceneStack.cpp
 )
 add_library(cengine::routing ALIAS cengine_routing)
 
