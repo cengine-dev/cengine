@@ -33,6 +33,18 @@ struct ClipDesc
 {
     int    frameCount = 1;   // >= 1
     double frameTime = 0.0;  // segundos por frame (ciclos multiframe)
+
+    /// `false` = toca uma vez e TRAVA no ultimo frame (explosao, impacto,
+    /// porta abrindo). O default e `true` porque a maioria dos clips cicla —
+    /// andar, idle, nadar.
+    ///
+    /// Promovido na 0.12.0 com 2/2: o `starforce::ExplosionAnimator`
+    /// (starforce@HEAD, `src/starforce/anim/ExplosionAnimator.h`) e o efeito
+    /// de abate do Bulwark escreveram o MESMO embrulho por fora — relogio
+    /// proprio, `finished()`, e o cuidado de nunca deixar o wrap interno
+    /// escapar. Duas copias do mesmo remendo sao o sinal de que faltava um
+    /// eixo aqui dentro.
+    bool loop = true;
 };
 
 /// O cursor: recebe o clip DESEJADO (que o jogo escolheu pelos fatos dele) e o
@@ -61,6 +73,14 @@ public:
     /// Frame ATUAL dentro do clip (0..frameCount-1).
     [[nodiscard]] int frame() const { return m_frame; }
 
+    /// `true` quando um clip que NAO cicla ja passou por todos os frames.
+    /// Clip em loop nunca termina, entao devolve `false` sempre.
+    ///
+    /// E o sinal que o jogo usa para tirar o efeito da lista de ativos — o
+    /// que os dois consumidores faziam com um `bool` proprio antes desta
+    /// versao.
+    [[nodiscard]] bool finished() const;
+
     /// Acucar de leitura para o enum do jogo: `anim.clipAs<Clip>()`.
     template <typename Clip>
         requires std::is_enum_v<Clip>
@@ -75,6 +95,7 @@ private:
     ClipId m_clip = 0;
     int    m_frame = 0;
     double m_elapsed = 0.0;
+    bool   m_finished = false;
 };
 
 } // namespace cengine::anim

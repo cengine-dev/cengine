@@ -5,6 +5,36 @@ All notable changes to CEngine are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-07-28
+
+Fecha a task 25 em **2/2**: `ClipDesc::loop` e `Animator::finished()`.
+
+> **Nao e breaking.** `loop` nasce `true`, que e o comportamento de sempre.
+
+### Added
+
+- **`ClipDesc::loop`** (default `true`): `false` faz o clip tocar uma vez e
+  TRAVAR no ultimo quadro.
+- **`Animator::finished()`**: `true` quando um clip que nao cicla ja passou
+  por todos os quadros. Clip em loop nunca termina.
+
+### Por que agora
+
+O `starforce::ExplosionAnimator` (2026-07-22) foi a primeira evidencia: 3
+quadros que precisavam tocar uma vez e travar, resolvidos com um embrulho por
+fora do `Animator` — relogio proprio, `finished()` local, e o cuidado de nunca
+deixar o wrap interno escapar. Ficou registrado como 1/2, com o gate explicito:
+"se um segundo jogo precisar do mesmo toca-e-trava, a comparacao decide".
+
+O segundo apareceu no Bulwark (degrau 07): a explosao de abate escreveria o
+MESMO embrulho, linha por linha. Duas copias do mesmo remendo sao o sinal de
+que faltava um eixo aqui dentro — nao de que o remendo era a resposta.
+
+A suite ENCARNA o caso do consumidor congelado, como a Emenda 1 do ADR 0002
+exige: os 3 quadros a 1/12s dos testes sao os do `ExplosionAnimator.h`, com a
+origem citada. O Star Force nao compila mais contra esta versao; o teste e o
+que mantem o caso dele vivo dentro da engine.
+
 ## [0.11.0] - 2026-07-28
 
 A promocao que a task 18 esperava desde 2026-07-14: **`cengine::routing::SceneStack`**,

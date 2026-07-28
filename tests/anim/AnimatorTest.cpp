@@ -168,3 +168,85 @@ TEST(AnimatorTest, ZeldaAttackOverridesWalkAndRestartsIt)
     EXPECT_EQ(anim.clipAs<Clip>(), Clip::Walk);
     EXPECT_EQ(anim.frame(), 0);
 }
+
+// --- clip que NAO cicla (0.12.0, task 25 fechada em 2/2) ---
+
+namespace {
+
+// PROVENIENCIA (ADR 0002, Emenda 1 — o pedagio da evidencia congelada): os
+// numeros abaixo sao os do `starforce::ExplosionAnimator`
+// (`src/starforce/anim/ExplosionAnimator.h`, kFrameCount = 3, kFrameTime =
+// 1/12), nao valores inventados que "parecem" plausiveis. O Star Force esta
+// estacionado e nao compila mais contra esta versao; este teste e o que
+// mantem o caso dele vivo DENTRO da engine, que e o proposito de te-lo
+// congelado em vez de apagado.
+constexpr int    kStarForceExplosionFrames = 3;
+constexpr double kStarForceExplosionFrameTime = 1.0 / 12.0;
+
+} // namespace
+
+TEST(AnimatorTest, ANonLoopingClipStopsOnTheLastFrame)
+{
+    cengine::anim::Animator animator({ cengine::anim::ClipDesc{ kStarForceExplosionFrames,
+                                                                kStarForceExplosionFrameTime, false } });
+
+    EXPECT_EQ(animator.frame(), 0);
+    EXPECT_FALSE(animator.finished());
+
+    animator.update(kStarForceExplosionFrameTime, 0);
+    EXPECT_EQ(animator.frame(), 1);
+    EXPECT_FALSE(animator.finished());
+
+    animator.update(kStarForceExplosionFrameTime, 0);
+    EXPECT_EQ(animator.frame(), 2);
+
+    // Chegar no ULTIMO quadro nao e ter terminado: ele ainda precisa ficar na
+    // tela pelo tempo dele. "Terminou" e ter passado pelos tres, que e a
+    // semantica que o ExplosionAnimator do Star Force ja usava.
+    EXPECT_FALSE(animator.finished());
+
+    animator.update(kStarForceExplosionFrameTime, 0);
+    EXPECT_EQ(animator.frame(), 2);
+    EXPECT_TRUE(animator.finished());
+}
+
+TEST(AnimatorTest, ANonLoopingClipNeverWrapsBackToTheFirstFrame)
+{
+    // O remendo que os dois consumidores escreviam por fora era exatamente
+    // este: impedir que o wrap interno escapasse e a explosao recomecasse.
+    cengine::anim::Animator animator({ cengine::anim::ClipDesc{ kStarForceExplosionFrames,
+                                                                kStarForceExplosionFrameTime, false } });
+
+    for (int step = 0; step < 20; ++step)
+    {
+        animator.update(kStarForceExplosionFrameTime, 0);
+    }
+
+    EXPECT_EQ(animator.frame(), kStarForceExplosionFrames - 1);
+    EXPECT_TRUE(animator.finished());
+}
+
+TEST(AnimatorTest, ALoopingClipIsNeverFinished)
+{
+    cengine::anim::Animator animator({ cengine::anim::ClipDesc{ 2, 0.1, true } });
+
+    for (int step = 0; step < 50; ++step)
+    {
+        animator.update(0.1, 0);
+        EXPECT_FALSE(animator.finished());
+    }
+}
+
+TEST(AnimatorTest, SwitchingClipsClearsTheFinishedFlag)
+{
+    cengine::anim::Animator animator({ cengine::anim::ClipDesc{ 2, 0.1, false },
+                                       cengine::anim::ClipDesc{ 2, 0.1, true } });
+
+    animator.update(0.1, 0); // quadro 0 -> 1
+    animator.update(0.1, 0); // o quadro 1 cumpre a duracao: terminou
+    ASSERT_TRUE(animator.finished());
+
+    animator.update(0.1, 1);
+    EXPECT_FALSE(animator.finished()); // clip novo comeca do zero
+    EXPECT_EQ(animator.frame(), 0);
+}

@@ -22,6 +22,7 @@ void Animator::update(const double dt, const ClipId desired)
         m_clip = desired;
         m_frame = 0;
         m_elapsed = 0.0;
+        m_finished = false;
         return; // troca de clip comeca no frame 0 (sem herdar o tempo do anterior)
     }
 
@@ -35,6 +36,17 @@ void Animator::update(const double dt, const ClipId desired)
         while (m_elapsed >= clip.frameTime)
         {
             m_elapsed -= clip.frameTime;
+
+            if (!clip.loop && m_frame + 1 >= clip.frameCount)
+            {
+                // Trava no ultimo, e para de acumular: chamar update de novo
+                // depois de terminado nao reinicia nem faz mal.
+                m_frame = clip.frameCount - 1;
+                m_finished = true;
+                m_elapsed = 0.0;
+                break;
+            }
+
             m_frame = (m_frame + 1) % clip.frameCount;
         }
     }
@@ -44,5 +56,7 @@ void Animator::update(const double dt, const ClipId desired)
         m_elapsed = 0.0;
     }
 }
+
+bool Animator::finished() const { return m_finished; }
 
 } // namespace cengine::anim
