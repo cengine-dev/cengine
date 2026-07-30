@@ -110,8 +110,8 @@ Ler antes de executar as tarefas de arquitetura:
 | 23 | [Câmera / viewport (mundo→tela + culling)](23-camera-viewport.md) | ✅ done (0.10.0 — `cengine::camera2d`: transformada+culling; seguimento ficou nos jogos; zelda valida, mario pinado 0.9.0) | Arquitetura |
 | 24 | [Áudio como porta (`play(id)`), backend na plataforma](24-audio-port.md) ✅ 0.9.0 | 🟡 Média (gate disparou com 2/2: breakout + mario@0fab493; mario valida a 0.9.0) | Arquitetura |
 | 25 | [Clip de animação de sprite (frames sobre tempo)](25-sprite-animation-clip.md) | ✅ done (0.10.0 — `cengine::anim`: máquina clip+frame+acumulador; seleção/vocabulário ficam nos jogos; zelda valida, mario pinado 0.9.0; spaceinvaders segue sem linkar — opt-in) | Arquitetura |
-| 26 | [Grade em pixels: célula ↔ pixel](26-grid-pixel-mapping.md) | 🟢 Baixa/Média (**1/2 na metade que paga** — a ida tem 2 consumidores e é fina demais; a volta tem 1) | Arquitetura |
-| 27 | [Mouse como porta de input](27-mouse-vocabulary-port.md) | 🟡 Média (**1/2** — o enum `Key` só subiu na 4ª cópia idêntica; o mouse tem 1) | Arquitetura |
+| 26 | [Grade em pixels: célula ↔ pixel](26-grid-pixel-mapping.md) ✅ 0.14.0 | 🟢 Baixa/Média (gate disparou quando a VOLTA chegou a 2: bulwark + tactics; delve é a 3ª evidência da ida) | Arquitetura |
+| 27 | [Mouse como porta de input](27-mouse-vocabulary-port.md) ✅ 0.14.0 | 🟡 Média (2/2 — e o 2º consumidor usou a forma do 1º SEM MUDAR NADA, que é o sinal mais forte deste filtro) | Arquitetura |
 
 ## Candidatas e estado dos gates
 
@@ -164,24 +164,22 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   discriminador do input) e a porta subiu: `cengine::audio::Player` com
   `play(id)` e mais nada, backend segue nas plataformas. É a prova de que uma
   estacionada não é uma recusa: é uma espera com critério.
-- **[26 (grade em pixels: célula ↔ pixel)](26-grid-pixel-mapping.md)** — **1/2, levantada na revisão do
-  Bulwark (2026-07-28)**. Delve (`@f9cd31b`, `ForgeWorldLayer.cpp:61`) e
-  Bulwark (`ForgeWorldLayer.cpp:38`) escrevem a MESMA conta de grade centrada
-  (`gridW = cols*cell`, `origin = (screen - grid) * 0.5`). Mas pelo precedente
-  da **camera2d** — origem é política do jogo, só a projeção sobe — a metade
-  de IDA que restaria é `origin + col*cell`: uma multiplicação e uma soma, fina
-  demais para virar módulo. A metade que PAGA é a VOLTA (`cellAt`: pixel →
-  célula com rejeição de borda, incluindo o teste de negativo ANTES do cast
-  para `uint32_t`, que é UB) — e essa tem **um** consumidor, porque só o
-  Bulwark tem ponteiro. Mesma candidata que o `screen → world` do degrau 05,
-  vista de outro ângulo. **Vizinhança, não sobreposição:** a `camera2d` declara
-  no cabeçalho que "escala, letterbox e centralização em PIXELS ficam nas
-  cenas" — este candidato mora no espaço que ela recusou de propósito.
-- **[27 (mouse como porta de input)](27-mouse-vocabulary-port.md)** — **1/2**. Vive no `forgeui` do common
-  (0.6.0) com vocabulário local, como o teclado viveu antes da task 20. O
-  discriminador é o histórico: o enum `Key` só subiu na **4ª cópia idêntica**;
-  o mouse tem uma. Fecha junto com a 26 e com o limite espacial da 18 — as
-  três são a mesma aposta, e todas dependem do 10º jogo ter ponteiro.
+- **[26 (grade em pixels: célula ↔ pixel)](26-grid-pixel-mapping.md)** —
+  **PROMOVIDA (0.14.0, 2026-07-30)**: `cengine::grid2d`. O gate disparou quando
+  a VOLTA (`cellAt`) chegou a dois consumidores — a do tactics é a do bulwark
+  linha a linha, mudando só o tipo inteiro. **Onde a grade COMEÇA não subiu**, e
+  isso é a confirmação do corte da `camera2d`: os três jogos centralizam com a
+  mesma conta e ainda assim ficou fora, porque o tactics já desvia dela (+20px
+  pelo título) e o 8puzzle centraliza só em X. A IDA subiu de carona — sozinha
+  não pagaria um módulo, mas os dois sentidos em lugares diferentes começam a
+  divergir.
+- **[27 (mouse como porta de input)](27-mouse-vocabulary-port.md)** —
+  **PROMOVIDA (0.14.0, 2026-07-30)**: `cengine::input::Mouse`, irmã da porta de
+  teclado da task 20. **O argumento não foi a contagem:** o segundo consumidor
+  (tactics) usou a forma do primeiro (bulwark) **sem pedir nenhuma mudança de
+  API** — que é o sinal mais forte que este filtro consegue dar. O casco
+  (common 0.9.0) guarda a instância e delega, e `forgeui::MouseClick` continua
+  existindo como alias, então nenhum jogo mudou uma linha.
 - **`Path`/waypoint** — **1/2 e sem task aberta**: busca no ecossistema inteiro
   não achou outro jogo com movimento por waypoint. Registrado para não se
   perder; não vira task até existir o segundo.

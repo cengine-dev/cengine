@@ -1,6 +1,7 @@
 # 27 - Mouse como porta de input
 
-- **Status:** ESTACIONADA — **1/2.** O gate NAO disparou.
+- **Status:** **PROMOVIDA (0.14.0, 2026-07-30)** — `cengine::input::Mouse`,
+  com o Tactics como segundo consumidor e validador.
 - **Categoria:** Arquitetura (porta, irma da task 20)
 - **Registrada em:** 2026-07-28 (revisao pos-Bulwark, 9o jogo)
 
@@ -43,14 +44,27 @@ Tres decisoes do degrau 05 do Bulwark que valem para qualquer porta futura:
 3. **A camada de baixo entrega PIXELS e nao sabe o que e celula.** A traducao
    e do jogo (ver task 26).
 
-## O que destrava
+## O que destravou (2026-07-30)
 
-Um **segundo jogo com ponteiro**. Ele fecha esta candidata junto com a 26
-(grade celula <-> pixel) e com o limite de roteamento espacial da task 18 — as
-tres sao a mesma aposta, declarada em
-`bulwark/.ai/task/09-revisao-candidatas.md`.
+O segundo jogo com ponteiro veio: **tactics, degrau 06**. E o argumento nao foi
+a contagem — foi que ele **usou a forma do primeiro sem mudar nada**. Quando o
+segundo consumidor nao pede nenhuma alteracao na API, o que se esta extraindo
+ja e a forma certa; e o sinal mais forte que este filtro consegue dar.
 
-E vale registrar o encadeamento: **se o mouse subir, o limite da 18 precisa
-subir junto.** Uma engine que entrega clique mas nao sabe dizer qual camada o
-recebeu entrega meio mecanismo — e o `IScene::input()` hoje nao reporta
-consumo.
+Subiu o vocabulario inteiro, sem invencao: `MouseButton` (so os dois botoes com
+consumidor), `MouseClick{button,x,y}` e a classe `Mouse` com posicao (estado) e
+fila de cliques (edges). Mesmo desenho do `Keyboard` da task 20, e de proposito:
+duas portas de input com formatos diferentes seriam duas coisas para aprender.
+
+O casco (common 0.9.0) passou a guardar a instancia e delegar, exatamente como
+faz com o teclado desde a 0.8.0; `forgeui::MouseButton` e `forgeui::MouseClick`
+continuam existindo como ALIAS, entao nenhum jogo precisou mudar uma linha.
+
+### A ressalva sobre a task 18, corrigida
+
+Estava escrito aqui: *"se o mouse subir, o limite da 18 precisa subir junto"*.
+**Nao precisa, e o degrau 07 do tactics mostrou por que.** Subir o vocabulario
+de ponteiro nao basta para a pilha rotear por posicao: falta ainda a cascata
+(reportar consumo) E resolver que o input e PUXADO de uma fila global — numa
+cascata, a primeira camada a olhar comeria o clique antes de decidir que nao era
+dela. A 18 depende desta task, mas o inverso nao vale: esta fecha sozinha.

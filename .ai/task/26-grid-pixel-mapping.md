@@ -1,6 +1,8 @@
 # 26 - Grade em pixels: celula <-> pixel
 
-- **Status:** ESTACIONADA — **1/2 na metade que paga.** O gate NAO disparou.
+- **Status:** **PROMOVIDA (0.14.0, 2026-07-30)** — `cengine::grid2d`, com o
+  Tactics como terceira evidencia e consumidor de validacao. O gate disparou
+  quando a VOLTA chegou a dois consumidores.
 - **Categoria:** Arquitetura (candidata a modulo opt-in, recorte a decidir)
 - **Registrada em:** 2026-07-28 (revisao pos-Bulwark, 9o jogo)
 
@@ -94,9 +96,29 @@ subir, sobe como coisa de PIXEL, e nao dentro da `camera2d`.
   cada celula. O 8puzzle e a prova de que a centralizacao e uma escolha entre
   varias.
 
-## O que destrava
+## O que destravou, e o que subiu (2026-07-30)
 
-Um **segundo jogo de grade COM ponteiro**. Ele fecha esta candidata junto com a
-27 (mouse como porta) e com o limite espacial da task 18 — as tres sao a mesma
-aposta, declarada na revisao do Bulwark
-(`bulwark/.ai/task/09-revisao-candidatas.md`).
+O segundo jogo de grade com ponteiro veio: **tactics @ 5c59205**
+(`ForgeBoardLayer.cpp:86-120`). A `cellAt` dele e a do bulwark **linha a
+linha**, mudando so o tipo inteiro (`int` x `uint32_t`) e o jeito de perguntar
+os limites. Com isso a VOLTA passou de 1 para 2 consumidores e o gate disparou.
+
+**Subiu** (`cengine::grid2d`): `Grid` (origem, lado da celula, cols/rows),
+`cellRect` (ida), `inside` e `cellAt` (volta).
+
+**Nao subiu — e a confirmacao do corte:** onde a grade COMECA. Os tres jogos
+centralizam na janela com a mesma conta, e mesmo assim ela ficou fora, porque
+o proprio tactics ja desvia dela (soma 20 pixels para caber o titulo) e o
+8puzzle centraliza so em X. Mesmo corte da `camera2d`: a engine projeta, o jogo
+decide de onde.
+
+A IDA subiu **de carona**: sozinha ela nao pagaria um modulo (uma multiplicacao
+e uma soma), mas separar os dois sentidos em lugares diferentes e o comeco de
+eles divergirem. O teste `TheTwoDirectionsAgreeWithEachOther` prende a
+propriedade.
+
+O teste que justifica o modulo e o
+`APointBEFORETheGridIsRefusedAndNotWrappedAround`: escrito na ordem "natural"
+(converter e depois conferir so o limite de cima), um ponto a esquerda da grade
+e recusado por ACIDENTE com `int` e e comportamento indefinido com inteiro sem
+sinal — que foi o tipo do primeiro consumidor.

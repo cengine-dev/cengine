@@ -64,6 +64,7 @@ if(CENGINE_BUILD_INPUT)
   target_sources(cengine_tests
     PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/input/KeyboardTest.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/input/MouseTest.cpp"
   )
   target_link_libraries(cengine_tests PRIVATE cengine::input)
 endif()
@@ -99,6 +100,17 @@ if(CENGINE_BUILD_ANIM)
     "${CMAKE_CURRENT_SOURCE_DIR}/anim/AnimatorTest.cpp"
   )
   target_link_libraries(cengine_tests PRIVATE cengine::anim)
+endif()
+
+# -------------------------------------------------------------
+# 3g. Testes do módulo grid2d — só quando o módulo está habilitado
+# -------------------------------------------------------------
+if(CENGINE_BUILD_GRID2D)
+  target_sources(cengine_tests
+    PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/grid2d/GridTest.cpp"
+  )
+  target_link_libraries(cengine_tests PRIVATE cengine::grid2d)
 endif()
 
 # -------------------------------------------------------------

@@ -6,6 +6,7 @@
 # -------------------------------------------------------------
 add_library(cengine_input STATIC
     src/Keyboard.cpp
+    src/Mouse.cpp
 )
 add_library(cengine::input ALIAS cengine_input)
 
