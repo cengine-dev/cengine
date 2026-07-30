@@ -25,7 +25,7 @@ deles sozinho responde "onde estamos".
 | `cengine` | a engine | 27 tasks, 6 modulos, 16 releases, 3 ADRs |
 | `platform-theforge-common` | casco Windows/The-Forge | 7 tasks, todas done, 9 releases |
 | `The-Forge` | dependencia externa (D3D12) | vendorizada |
-| `2d-art-lab` | laboratorio de arte | usado 1x (menu do Star Force) |
+| `creative-lab` | orquestrador criativo (arte 2d, audio, 3d) | ex-`2d-art-lab`; nucleo neutro + pack `2d-art`; usado 1x (menu do Star Force) |
 | 9 jogos | consumidores de validacao | 150 commits somados |
 
 ## Os jogos
