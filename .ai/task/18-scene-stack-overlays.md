@@ -187,12 +187,9 @@ Com teclado a pergunta nem aparece. Com PONTEIRO ela vira espacial: o clique
 caiu no painel ou no mapa? A pilha nao tem como saber, porque
 `core::IScene::input()` nao reporta se consumiu o evento.
 
-Nao foi corrigido de proposito, e o motivo NAO e custo de migracao — este
-argumento apareceu numa primeira redacao e estava errado. O ADR 0003 pina os
-consumidores em versoes especificas: um breaking no `IScene` numa 0.12.0 nao
-obrigaria jogo nenhum a migrar. O motivo verdadeiro e o criterio 2 do ADR
-0002: UM consumidor precisou disto, e uma API desenhada por um caso so tem o
-formato daquele caso. O Bulwark resolveu localmente — compara o clique com a area do
+Nao foi corrigido de proposito. O motivo e o criterio 2 do ADR 0002: UM
+consumidor precisou disto, e uma API desenhada por um caso so tem o formato
+daquele caso. O Bulwark resolveu localmente — compara o clique com a area do
 painel antes de traduzir para celula. **Se um segundo jogo bater no mesmo
 ponto, a comparacao decide** se o `input()` passa a reportar consumo ou se a
 solucao local continua sendo a resposta certa.
@@ -200,6 +197,52 @@ solucao local continua sendo a resposta certa.
 Vale notar de onde esse limite veio: o Delve so tinha overlays MODAIS (pausa
 e inventario), e por isso a regra pareceu completa la. Foi o mouse do Bulwark
 que produziu o caso — o que era a aposta registrada no plano dele.
+
+### O segundo consumidor bateu (Tactics, 2026-07-30) — e a resposta e NAO
+
+O Tactics (10o jogo, degrau 07) foi escolhido para produzir esta segunda
+evidencia. Produziu, e o veredito e **nao corrigir agora** — com tres razoes
+que valem mais que a correcao teria valido.
+
+**1. Os dois contornos tem FORMATOS DIFERENTES.** No Bulwark a geometria do
+painel vazou para BAIXO (a camada do mundo precisa saber onde fica um botao
+que ela nao desenha). No Tactics as duas camadas sao empilhadas como PASSIVAS
+e quem roteia e a cena, que legitimamente conhece as duas. Quando duas copias
+divergem, o que esta maduro e o PROBLEMA, nao a solucao — mesmo sinal que
+segura a task 22 ha quatro jogos.
+
+**2. Reportar consumo NAO BASTARIA.** Este e o achado que muda o desenho da
+correcao: **o input e PUXADO de uma fila global, nao ENTREGUE.** `input()` nao
+recebe nada; cada cena chama `forgeui::readMouseClick()`, e essa chamada
+CONSOME o evento. Numa cascata, a primeira camada a olhar comeria o clique
+antes de decidir que ele nao era dela, e as de baixo receberiam a fila vazia.
+Promover so o "reporta consumo" faria a pilha prometer cascata e entregar
+clique comido — pior que nao promover.
+
+Para a cascata funcionar seria preciso tambem UMA de duas coisas:
+- input **entregue** em vez de puxado (mudar `IScene::input()` para receber o
+  evento — mexida em toda cena de todos os jogos); ou
+- **espiar sem consumir** no casco (`peekMouseClick()` no `forgeui`), para a
+  camada decidir antes de tirar da fila.
+
+E ha ainda a terceira metade: mesmo com cascata, a pergunta continua ESPACIAL,
+e o vocabulario de ponteiro vive no casco (task 27, nao promovida). **A
+correcao da 18 esta amarrada a 27.**
+
+**3. CORRECAO DE FATO: o custo de um breaking em `IScene` NAO e zero.** A
+redacao anterior desta secao dizia que "o ADR 0003 pina os consumidores em
+versoes especificas, entao um breaking nao obrigaria ninguem a migrar". **Isso
+esta errado.** O ADR 0003 congelou apenas 8puzzle e spaceinvaders. Os outros
+sete jogos compilam os FONTES da cengine direto do checkout irmao — os vcxproj
+listam `$(CengineRoot)core\src\EngineManager.cpp` e companhia, sem versao
+pinada. O pino por tag existe so no CMake das suites de dominio. Um breaking
+em `IScene` quebra o build de sete jogos no proximo rebuild.
+
+**O que fica registrado para a proxima tentativa:** o gate 18 nao espera mais
+"um segundo consumidor" — ele ja veio. Espera um desenho que resolva as tres
+metades juntas (cascata + espiar-sem-consumir + posicao no vocabulario da
+engine), e um jogo que precise disso o bastante para pagar o breaking. Ate la,
+resolver na cena continua sendo a resposta certa, e custa ~12 linhas.
 - **Categoria:** Arquitetura / routing
 - **Depende de:** 13 done (Router x Repository separados), 15 done (modo
   hospedado) e 16 done (present no fim do quadro).

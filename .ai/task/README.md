@@ -133,11 +133,23 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   primeira camada ativa do topo recebe input" é correta para overlay MODAL e
   insuficiente para overlay clicável NÃO-modal — com ponteiro, "quem recebe o
   clique" é espacial, e `IScene::input()` não reporta consumo. Não corrigido
-  por ter UM consumidor (critério 2), não por custo de migração — o ADR 0003
-  pina os jogos, então um breaking não obrigaria ninguém a migrar.
-  **Revisão do Bulwark (2026-07-28): segue com UM consumidor.** É a dívida
-  declarada do 10º jogo, condicionada: se ele tiver ponteiro, extrai o mouse
-  (27) e corrige o roteamento espacial; se não tiver, a candidata espera.
+  por ter UM consumidor (critério 2).
+  **O 2º consumidor bateu (Tactics, degrau 07, 2026-07-30) — e a resposta é
+  NÃO corrigir**, com três razões que valem mais que a correção valeria:
+  (a) os dois contornos têm FORMATOS DIFERENTES (no Bulwark a geometria vaza
+  para a camada de baixo; no Tactics as camadas são passivas e quem roteia é a
+  cena) — duplicata que diverge é sinal de PROBLEMA maduro, não de solução
+  madura; (b) **reportar consumo não bastaria**: o input é PUXADO de uma fila
+  global e `readMouseClick()` CONSOME, então numa cascata a primeira camada
+  comeria o clique antes de decidir que não era dela — faltam ainda
+  espiar-sem-consumir (ou input entregue em vez de puxado) e o vocabulário de
+  posição, que é a **task 27**; a 18 está amarrada nela; (c) **correção de
+  fato:** dizia-se aqui que o breaking em `IScene` era barato "porque o ADR
+  0003 pina os jogos" — **errado**. O ADR 0003 congelou só 8puzzle e
+  spaceinvaders; os outros sete compilam os FONTES da cengine do checkout
+  irmão (`$(CengineRoot)core\src\...` no vcxproj), sem tag. Um breaking em
+  `IScene` quebra o build de sete jogos. O gate agora espera um desenho que
+  resolva as três metades juntas, não mais "um segundo consumidor".
 - **22 (resolução de colisão)** — **2/2 para o padrão eixo-separado**: mario e
   zelda movem/resolvem X e depois Y. Isso dispara a comparação, mas não a API
   de penetração/MTV originalmente imaginada, que segue com 0 consumidores. A
