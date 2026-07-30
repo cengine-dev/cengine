@@ -242,16 +242,16 @@
 <div class="wrap">
 
   <header class="masthead">
-    <div class="eyebrow">cengine · platform-theforge-common · 9 jogos</div>
+    <div class="eyebrow">cengine · platform-theforge-common · 10 jogos</div>
     <h1>Retrato do ecossistema</h1>
-    <div class="stamp">Atualizado em <b>2026-07-28</b>, após a revisão de candidatas do <b>Bulwark</b> (9º jogo).</div>
+    <div class="stamp">Atualizado em <b>2026-07-28</b>, após a revisão de candidatas do <b>Tactics</b> (10º jogo).</div>
   </header>
 
   <div class="kpis">
-    <div class="kpi"><div class="n">6</div><div class="l">módulos vivos na engine</div></div>
-    <div class="kpi"><div class="n">8<small> / 11</small></div><div class="l">candidatas de jogo promovidas</div></div>
-    <div class="kpi"><div class="n">16</div><div class="l">releases da cengine</div></div>
-    <div class="kpi"><div class="n">150</div><div class="l">commits somados nos jogos</div></div>
+    <div class="kpi"><div class="n">7</div><div class="l">módulos vivos na engine</div></div>
+    <div class="kpi"><div class="n">10<small> / 11</small></div><div class="l">candidatas de jogo promovidas</div></div>
+    <div class="kpi"><div class="n">17</div><div class="l">releases da cengine</div></div>
+    <div class="kpi"><div class="n">162</div><div class="l">commits somados nos jogos</div></div>
   </div>
 
   <section>
@@ -338,6 +338,24 @@
         </div>
       </div>
       <div class="rel">
+        <div class="v">0.14.0</div>
+        <div class="body">
+          <span class="mod">grid2d</span>
+          <span class="from">extraído de</span>
+          <span class="chip">delve</span><span class="chip">bulwark</span><span class="chip">tactics</span>
+          <span class="note">A volta (pixel → célula) era idêntica linha a linha entre bulwark e tactics. Onde a grade COMEÇA não subiu: os três centralizam igual, mas o tactics já desvia — e é esse desvio que prova que centralizar é política.</span>
+        </div>
+      </div>
+      <div class="rel">
+        <div class="v">0.14.0</div>
+        <div class="body">
+          <span class="mod">input / Mouse</span>
+          <span class="from">extraído de</span>
+          <span class="chip">bulwark</span><span class="chip">tactics</span>
+          <span class="note">O argumento não foi a contagem: o 2º consumidor usou a forma do 1º sem pedir nenhuma mudança de API — o sinal mais forte que este filtro consegue dar.</span>
+        </div>
+      </div>
+      <div class="rel">
         <div class="v">0.13.0</div>
         <div class="body">
           <span class="mod">IWindowManager::shouldClose()</span>
@@ -368,7 +386,8 @@
           <tr><td class="idx">6</td><td class="name">zelda</td><td class="num">10</td><td class="mono">07-19</td><td class="mono">0.10.0</td><td class="num">5</td><td>câmera (2ª), anim (2ª), IA que navega</td></tr>
           <tr><td class="idx">7</td><td class="name">starforce</td><td class="num">14</td><td class="mono">07-22</td><td class="mono">0.10.0</td><td class="num">7</td><td>massa de entidades, roteiro por scroll</td></tr>
           <tr><td class="idx">8</td><td class="name">delve</td><td class="num">11</td><td class="mono">07-28</td><td class="mono">0.10.0</td><td class="num">4</td><td>pilha de camadas, jogo por turnos</td></tr>
-          <tr><td class="idx">9</td><td class="name">bulwark</td><td class="num">8</td><td class="mono">07-28</td><td class="mono">0.13.0</td><td class="num">4</td><td><b>mouse</b> — o 1º do ecossistema; economia; a pilha validada</td></tr>
+          <tr><td class="idx">9</td><td class="name">bulwark</td><td class="num">9</td><td class="mono">07-28</td><td class="mono">0.13.0</td><td class="num">4</td><td><b>mouse</b> — o 1º do ecossistema; economia; a pilha validada</td></tr>
+          <tr><td class="idx">10</td><td class="name">tactics</td><td class="num">10</td><td class="mono">07-30</td><td class="mono">0.14.0</td><td class="num">4</td><td><b>iniciativa e orçamento de ação</b>; jogo só de ponteiro; o 1º pathfinding</td></tr>
         </tbody>
       </table>
     </div>
@@ -381,13 +400,13 @@
     <div class="sieves">
       <div class="sieve">
         <div class="t">Critério 2 — dois consumidores</div>
-        <div class="big">4 seguradas</div>
+        <div class="big">2 seguradas</div>
         <div class="bar"><i style="width:78%;background:var(--good)"></i><i style="width:22%;background:var(--warn)"></i></div>
-        <p>Das 11 candidatas nascidas em jogos, 8 subiram. As 4 paradas esperam um segundo consumidor real — não um argumento. Três delas fecham juntas, se o 10º jogo tiver ponteiro.</p>
+        <p>Das 11 candidatas nascidas em jogos, 10 subiram. E as 2 que restam <strong>não esperam mais consumidor</strong>: a 18 espera <em>desenho</em>, a 22 espera um caso que quatro jogos com colisão nunca produziram.</p>
       </div>
       <div class="sieve">
         <div class="t">Critério 1 — mecanismo × política</div>
-        <div class="big">7 vetadas</div>
+        <div class="big">8 vetadas</div>
         <div class="bar"><i style="width:100%;background:var(--off)"></i></div>
         <p>Recusadas por serem vocabulário de jogo, não mecanismo. Marcadas como “não reabrir sem argumento novo”.</p>
       </div>
@@ -400,6 +419,7 @@
       <span class="chip">Events por quadro</span>
       <span class="chip">Formatação de tempo</span>
       <span class="chip">Cooldown do som de tiro</span>
+      <span class="chip">Busca em largura sobre grade</span>
     </div>
     <p><strong>Events por quadro</strong> é o caso mais instrutivo: zelda e Delve têm os dois, na mesma forma — um struct de bools. Passa no critério 2 e morre no critério 1. Dois consumidores não salvam uma abstração cujo conteúdo é nome de coisa do jogo.</p>
     <p>O Bulwark deu a ele uma <strong>regra, paga com bug</strong>: <em>quem para de atualizar também tem de parar de reportar.</em> O tempo de vida do evento está amarrado ao do <code>update</code> — e todo lugar onde o <code>update</code> para é um lugar onde o evento mente. Não vira tipo da engine; vira teste-padrão: <em>depois do fim, os eventos estão vazios</em>.</p>
@@ -408,22 +428,12 @@
 
   <section>
     <h2>O que está aberto</h2>
-    <p class="lede">As três primeiras são <strong>a mesma aposta</strong>: todas fecham se o 10º jogo tiver ponteiro, e nenhuma fecha se ele não tiver.</p>
+    <p class="lede">Pela primeira vez, o que sobrou <strong>não espera consumidor</strong> — espera outra coisa.</p>
     <div class="cards">
       <div class="card">
-        <span class="tag waiting">1 consumidor</span>
+        <span class="tag waiting">2 contornos que divergem</span>
         <h3>18 — roteamento espacial do clique</h3>
-        <p>A pilha subiu na 0.11.0 com um limite escrito: <em>“só a primeira camada ativa do topo recebe input”</em> é correto para overlay <strong>modal</strong> e insuficiente para overlay <strong>clicável não-modal</strong>. Com ponteiro, quem recebe o clique é uma pergunta espacial — e <code>IScene::input()</code> não reporta consumo.</p>
-      </div>
-      <div class="card">
-        <span class="tag waiting">1 de 2</span>
-        <h3>27 — mouse como porta</h3>
-        <p>Vive no <code>forgeui</code> com vocabulário local, como o teclado antes da task 20 — que só subiu na <strong>4ª cópia idêntica</strong>. O mouse tem uma.</p>
-      </div>
-      <div class="card">
-        <span class="tag waiting">1 de 2</span>
-        <h3>26 — grade célula ↔ pixel</h3>
-        <p>Delve e Bulwark escrevem a mesma conta de grade centrada. Mas pelo precedente da <code>camera2d</code> — origem é política do jogo — a ida que restaria é uma multiplicação e uma soma. A <strong>volta</strong> (pixel → célula, com o teste de negativo antes do cast) tem substância, e tem um consumidor só.</p>
+        <p>Bulwark e Tactics bateram no mesmo limite e resolveram de formas <strong>diferentes</strong> — sinal de que o problema está maduro e a solução não. E a correção óbvia (o <code>input()</code> reportar consumo) <strong>não funcionaria sozinha</strong>: o input é <em>puxado</em> de uma fila global, então numa cascata a primeira camada comeria o clique antes de decidir que não era dela. Espera um desenho que resolva as três metades juntas — e um jogo que sofra o bastante para pagar o breaking.</p>
       </div>
       <div class="card">
         <span class="tag waiting">0 de 2</span>
@@ -432,21 +442,24 @@
       </div>
     </div>
     <div class="callout">
-      <div class="t">E uma que morreu nesta revisão — com argumento</div>
-      <p>O <strong>pool de efeitos transitórios</strong> (Star Force + Bulwark) parecia 2 de 2: os dois mantêm uma lista de explosões que nasce de evento, envelhece e some. Não é. <strong>A duplicação real já tinha subido na 0.12.0</strong> — o embrulho que sabia quando a animação acabou virou <code>ClipDesc::loop</code> + <code>Animator::finished()</code>. O que sobrou são ~6 linhas de <code>std::vector</code>, e nem iguais.</p>
-      <p><em>Uma promoção bem feita esvazia a próxima candidata:</em> o que resta parece candidato pela silhueta e já é só idioma. Se não dá para descrever a candidata sem citar <code>std::vector</code>, é biblioteca padrão, não engine.</p>
+      <div class="t">Duas candidatas levantadas e mortas, com argumento</div>
+      <p><strong>Pool de efeitos transitórios</strong> (Bulwark): parecia 2 de 2, mas <strong>a duplicação real já tinha subido na 0.12.0</strong>. O que sobrou são ~6 linhas de <code>std::vector</code>, e nem iguais. <em>Uma promoção bem feita esvazia a próxima candidata.</em></p>
+      <p><strong>Busca em largura sobre grade</strong> (Tactics): o primeiro pathfinding do ecossistema — mecanismo puro, testável sem tela. Vetado porque os dois jogos com IA que navega <strong>recusaram pathfinding por escrito, no próprio código</strong>: o zelda desliza na parede, o delve encalha na quina de propósito (“e até útil: dá ao jogador um jeito de quebrar perseguição”). Não é “ainda não há dois” — é <strong>o segundo caso existe e escolheu o contrário</strong>.</p>
     </div>
   </section>
 
   <section>
     <h2>Leitura</h2>
-    <p>A engine cresceu 6 módulos por extração, nenhum por especulação. O funil tem duas peneiras e as duas trabalham: o critério dos dois consumidores segura 4 candidatas hoje, e o corte mecanismo × política matou 7.</p>
-    <p>O que está parado é pouco e é recente. A 22 espera um caso que nenhum jogo produziu; as outras três esperam a mesma coisa — um segundo jogo com ponteiro.</p>
+    <p>A engine cresceu 7 módulos por extração, nenhum por especulação. O funil tem duas peneiras e as duas trabalham: o critério dos dois consumidores segura 2 candidatas hoje, e o corte mecanismo × política matou 8.</p>
+    <p>O Tactics mostrou o filtro respondendo <strong>três coisas diferentes no mesmo jogo</strong>: a 26 subiu porque a cópia era idêntica linha a linha; a 27 subiu por um motivo melhor que contagem — <em>o 2º consumidor não pediu nenhuma mudança de API</em>; e a 18 não subiu porque duas cópias que <em>divergem</em> são sinal de problema maduro e solução imatura. Um filtro que só soubesse contar teria promovido as três.</p>
+    <p>O que está parado é pouco. A 22 espera um caso que nenhum jogo produziu; a 18 já tem os dois consumidores e espera <em>desenho</em>.</p>
     <div class="callout">
       <div class="t">Ponto cego conhecido</div>
       <p>O método é enviesado para <strong>extração</strong>, e por isso estruturalmente cego para abstração que só paga se for desenhada antes de existir — uma pilha de cenas é desse tipo. O contrapeso é a fórmula <em>“o próximo jogo extrai, não copia”</em>, que antecipa a extração para o momento do segundo consumidor em vez de esperar a segunda cópia.</p>
       <p><strong>O Bulwark foi o teste dessa fórmula, e ela passou.</strong> Ele nasceu devendo três extrações já prometidas por escrito e executou as três <em>dentro</em> dos degraus — mais quatro correções que só apareceram jogando. Sete releases de lib em um jogo de oito commits. A consequência é que a revisão final dele chegou vazia, e <strong>isso é o desenho funcionando, não a peneira apertada demais</strong>: as promoções aconteceram mais cedo.</p>
-      <p>Por isso a pergunta antes de escolher o próximo jogo não é <em>“que gênero falta?”</em> — é <strong>“que candidata parada ele fecharia?”</strong>. O Bulwark foi escolhido porque convertia a task 18. Converteu.</p>
+      <p>Por isso a pergunta antes de escolher o próximo jogo não é <em>“que gênero falta?”</em> — é <strong>“que candidata parada ele fecharia?”</strong>. O Bulwark foi escolhido porque convertia a task 18. Converteu. O Tactics foi escolhido para fechar três, e fechou duas — com o parecer da terceira valendo mais que a promoção teria valido.</p>
+      <p><strong>E aqui a pergunta chega ao seu limite, pela primeira vez.</strong> Depois do Tactics não sobra candidata que um jogo feche <em>por existir</em>. Escolher o 11º jogo por dívida seria fingir que há uma — o critério precisa mudar, e reconhecer isso em voz alta é mais útil que forçar a pergunta velha.</p>
+      <p>Um contraponto que o Tactics deixou: <strong>um jogo completo pode não usar módulos disponíveis, e isso é informação, não lacuna.</strong> Ele ignorou <code>anim</code> (um tabuleiro por turnos não anima) e <code>collision2d</code> (células inteiras não fazem geometria). Medir um módulo por quantos jogos o linkam mediria a coincidência de gêneros, não a qualidade do corte.</p>
     </div>
   </section>
 

@@ -211,6 +211,19 @@ cópias eram o MESMO dado puro (o enum `Key`); os itens abaixo têm cópias
 estruturalmente parecidas mas **semanticamente diferentes**. Semelhança de forma
 ≠ identidade de mecanismo.
 
+- **Busca em largura sobre grade (pathfinding)** — levantada e vetada na MESMA
+  revisão (Tactics, 2026-07-30). O `Board::reachable` dele é o primeiro
+  pathfinding de verdade do ecossistema, é mecanismo puro e é testável sem tela
+  — e mesmo assim não sobe, porque **os dois jogos com IA que navega recusaram
+  pathfinding POR ESCRITO, no próprio código**: zelda (`World.cpp:394`, "sem
+  pathfinding neste degrau: barrado numa parede ele desliza no outro eixo") e
+  delve (`Dungeon.cpp:268`, "perseguição gulosa (...) encalhar numa quina é
+  aceitável — e até útil: dá ao jogador um jeito de quebrar perseguição").
+  Nenhum dos dois deixou de fazer por preguiça: **decidiram** que a perseguição
+  gulosa era o comportamento certo. Se a engine tivesse um pathfinder, esses
+  dois não o usariam. Mesmo formato do veto ao wrap-around: não é "ainda não há
+  dois", é "o segundo caso existe e escolheu o contrário". Reabre se aparecer
+  um jogo cuja IA PRECISE de caminho ótimo.
 - **Recordes** (`Record` + `RecordService` + `RecordRepository` + `FileRecordRepository`)
   — em 4 jogos (8puzzle, spaceinvaders, asteroids, breakout), a MAIOR duplicação
   do ecossistema. Vetado explicitamente (asteroids task 05, breakout task 07):
@@ -261,6 +274,23 @@ estruturalmente parecidas mas **semanticamente diferentes**. Semelhança de form
   Detalhe que explica por que nenhuma suíte pegou antes: testes de fim de
   partida leem ESTADO (vida, entidades paradas), e estado parado está certo —
   **o bug só existe quando aparece o primeiro leitor de EVENTO.**
+
+  **Emenda 2 (revisão do Tactics, 2026-07-30) — a regra sobe um nível.** O 10º
+  jogo mostrou que "quem para de atualizar tem de parar de reportar" é o
+  SINTOMA, e não a causa. A causa é **o tempo de vida do evento estar amarrado
+  ao RELÓGIO**: quando está, todo lugar em que o relógio para é um lugar onde o
+  evento mente. O Tactics é por turnos e não tem `update`; amarrar a limpeza a
+  um relógio inexistente seria inventar um, então os eventos acumulam e **a
+  LEITURA os consome** (`takeEvents`) — com isso o problema **deixa de ser
+  possível**, e não apenas evitado. A regra completa:
+
+  > O tempo de vida de um evento deve estar amarrado à **leitura**, e não ao
+  > relógio. Quando depender do relógio, vale o corolário que o Bulwark pagou.
+
+  **A nova não substitui a antiga — ela diz quando cada uma vale.** Amarrar à
+  leitura custa: **um leitor só** (a segunda leitura vê vazio). Onde houver dois
+  leitores, limpar no relógio volta a ser a forma certa. Segue não virando tipo
+  da engine: os campos continuam sendo vocabulário de cada jogo.
 - **Formatação de tempo** — o common já tem `formatMillis` (hh:mm:ss.mmm, do
   8puzzle) e o mario criou `ui::formatTime` (M:SS.cc) SEM reusar: os formatos
   divergem de propósito (cronômetro de puzzle vs HUD de arcade). Formato de
