@@ -104,7 +104,8 @@ foi recolhida.
 
 ## O que esta aberto
 
-**Pela primeira vez, o que sobrou nao espera CONSUMIDOR — espera outra coisa.**
+**As duas TASKS abertas nao esperam mais consumidor — esperam outra coisa.** As
+duas candidatas NOVAS, essas sim: uma evidencia cada.
 
 - **18 (roteamento espacial do clique)** — dois consumidores ja bateram
   (bulwark e tactics) e resolveram com contornos de FORMATOS DIFERENTES. Isso
@@ -193,7 +194,7 @@ foi tirada ANTES dele.
 Dito curto: **o undo restaura o ESTADO; ele nao desfaz o PASSADO de quem esta
 ouvindo.**
 
-Um setimo idioma entrou na lista, com QUATRO aparicoes e sem virar tipo:
+O nono nome entrou na lista, com QUATRO aparicoes e sem virar tipo:
 **resultado com MOTIVO** (`BuildResult`, `StepResult`/`ActionResult`,
 `MoveResult`). A recusa carrega por que foi recusada, e a tela vira frase. Os
 motivos SAO o jogo — `NeedsKing` nao significa nada fora da paciencia. Vale

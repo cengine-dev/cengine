@@ -426,13 +426,13 @@
     <p><strong>Events por quadro</strong> é o caso mais instrutivo: zelda e Delve têm os dois, na mesma forma — um struct de bools. Passa no critério 2 e morre no critério 1. Dois consumidores não salvam uma abstração cujo conteúdo é nome de coisa do jogo.</p>
     <p>O Bulwark deu a ele uma <strong>regra, paga com bug</strong>: <em>quem para de atualizar também tem de parar de reportar.</em> O tempo de vida do evento está amarrado ao do <code>update</code> — e todo lugar onde o <code>update</code> para é um lugar onde o evento mente. Não vira tipo da engine; vira teste-padrão: <em>depois do fim, os eventos estão vazios</em>.</p>
     <p><strong>O Klondike acrescentou a segunda metade dessa regra</strong>, e só um jogo com <em>undo</em> podia achá-la: não basta amarrar o evento à leitura — ele também tem de viver <strong>fora do que se copia</strong>. A mesa é o que o snapshot guarda; um evento dentro dela seria restaurado junto, e o som que acabou de acontecer sumiria porque a cópia foi tirada <em>antes</em> dele. Dito curto: <strong>o undo restaura o estado; ele não desfaz o passado de quem está ouvindo.</strong></p>
-    <p>Um sétimo idioma entrou na lista com <strong>quatro aparições</strong> e sem virar tipo: <strong>resultado com motivo</strong> (<code>BuildResult</code>, <code>ActionResult</code>, <code>MoveResult</code>). A recusa carrega por que foi recusada, e a tela vira frase — mas os motivos <em>são</em> o jogo: <code>NeedsKing</code> não significa nada fora da paciência. Vale registrar porque quatro aparições é mais do que várias candidatas promovidas tiveram: <strong>a repetição de um padrão não é a repetição de um mecanismo</strong>, e confundir os dois é como um depósito começa.</p>
+    <p>O nono nome entrou na lista com <strong>quatro aparições</strong> e sem virar tipo: <strong>resultado com motivo</strong> (<code>BuildResult</code>, <code>ActionResult</code>, <code>MoveResult</code>). A recusa carrega por que foi recusada, e a tela vira frase — mas os motivos <em>são</em> o jogo: <code>NeedsKing</code> não significa nada fora da paciência. Vale registrar porque quatro aparições é mais do que várias candidatas promovidas tiveram: <strong>a repetição de um padrão não é a repetição de um mecanismo</strong>, e confundir os dois é como um depósito começa.</p>
     <p>Já o <strong>cooldown do som de tiro</strong> entrou na lista fechando <strong>2 de 2</strong> — e mesmo assim não sobe. Quantos tiros por segundo o ouvido aguenta é política de apresentação. Registrar que uma previsão se confirmou importa tanto quanto registrar uma promoção.</p>
   </section>
 
   <section>
     <h2>O que está aberto</h2>
-    <p class="lede">Pela primeira vez, o que sobrou <strong>não espera consumidor</strong> — espera outra coisa.</p>
+    <p class="lede">As duas <em>tasks</em> abertas <strong>não esperam mais consumidor</strong> — esperam outra coisa. As duas candidatas <em>novas</em>, essas sim: uma evidência cada.</p>
     <div class="cards">
       <div class="card">
         <span class="tag waiting">2 contornos que divergem</span>
