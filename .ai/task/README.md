@@ -192,6 +192,30 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   API** — que é o sinal mais forte que este filtro consegue dar. O casco
   (common 0.9.0) guarda a instância e delega, e `forgeui::MouseClick` continua
   existindo como alias, então nenhum jogo mudou uma linha.
+- **Vocabulário de DRAG** — **1/2 e sem task aberta** (Klondike, 2026-07-31).
+  O arrastar nasceu no casco (common 0.10.0), LOCAL no `forgeui`: `drag()`
+  (estado) + `readDrop()` (edge), com `SetCapture`/`WM_CAPTURECHANGED`/
+  `cancelDrag` no WndProc. **Fica lá, pelo caminho que o mouse já percorreu**
+  (task 27): viveu no `forgeui` por dois jogos e só subiu quando o 2º
+  consumidor usou a forma do 1º sem pedir mudança de API. Duas notas para
+  quando o segundo chegar: (a) **a forma provável já tem precedente** — o par
+  estado+edge é o MESMO do teclado (`isHeld` + `readKey`, 0.8.0), e três portas
+  de input com a mesma forma seria evidência forte; (b) **o `SetCapture` não
+  espera nada**, já subiu por construção, porque o WndProc É o casco — era um
+  buraco que existia desde sempre e que nenhum jogo de clique acharia (sem
+  capturar o ponteiro, soltar o botão fora da janela não gera `WM_LBUTTONUP` e
+  o gesto fica pendurado para sempre).
+- **Undo por snapshot** — **MORTA na revisão do Klondike, com argumento.** O
+  `Game` é mesa + `std::vector<Table>` e `undo()` restaura o topo; parece
+  mecanismo puro e testável. Morre por dois motivos, e o primeiro já é lei da
+  casa (revisão do Bulwark): *se não dá para descrever a candidata sem citar
+  `std::vector`, é biblioteca padrão, não engine* — um `History<T>` seria
+  `push_back`/`back`/`pop_back` embrulhados num nome. **O segundo é mais
+  interessante: a parte difícil não é o container, é decidir O QUE entra no
+  snapshot** (a mesa entra; o histórico não — uma mesa que se copiasse para
+  dentro de si guardaria o histórico dentro do snapshot; os eventos não — ver a
+  Emenda 2b). Nenhuma dessas respostas está no container. Evidência: **1/11**,
+  nenhum outro jogo tem desfazer.
 - **`Path`/waypoint** — **1/2 e sem task aberta**: busca no ecossistema inteiro
   não achou outro jogo com movimento por waypoint. Registrado para não se
   perder; não vira task até existir o segundo.
@@ -303,6 +327,44 @@ estruturalmente parecidas mas **semanticamente diferentes**. Semelhança de form
   leitura custa: **um leitor só** (a segunda leitura vê vazio). Onde houver dois
   leitores, limpar no relógio volta a ser a forma certa. Segue não virando tipo
   da engine: os campos continuam sendo vocabulário de cada jogo.
+
+  **Emenda 2b (revisão do Klondike, 2026-07-31) — a regra ganha uma segunda
+  metade, e ela só era descobrível num jogo com UNDO.** O 11º jogo é o primeiro
+  do ecossistema com desfazer, e o primeiro leitor de evento dele nasceu no
+  mesmo jogo. Os dois juntos mostram que amarrar à leitura não basta: **o
+  evento também precisa viver FORA do que se copia.** A `Table` é o que o
+  snapshot guarda; um evento dentro dela seria restaurado junto com a mesa — e
+  o som que acabou de acontecer sumiria, porque a cópia foi tirada ANTES dele.
+  Por isso `klondike::GameEvents` mora no `Game`, ao lado do histórico e não
+  dentro dele (`UndoDoesNotRewriteWhatAlreadyHappened`). A regra completa:
+
+  > O tempo de vida de um evento deve estar amarrado à **leitura**, e o evento
+  > deve viver **fora do que se copia**. Onde houver snapshot (undo, replay,
+  > save), guardar evento dentro do que é copiado faz o passado ser reescrito
+  > junto com o estado.
+
+  Dito curto: **o undo restaura o ESTADO; ele não desfaz o PASSADO de quem está
+  ouvindo.** É a mesma fronteira que aquele jogo já tinha desenhado para o que
+  o jogador VIU — o conhecimento mora na cabeça dele, fora do domínio.
+
+  E o Klondike deixou um subproduto que vale como método: **o "antes" que o
+  undo já exige responde perguntas de evento de graça.** O destampe acontece
+  dentro do movimento e o `Game` não o vê; fazer a `Table` reportar
+  descreveria o destampe em dois lugares (o `faceDown` que encolheu e a
+  bandeira dizendo que encolheu). Comparar as duas mesas não pode divergir do
+  estado porque **é** o estado. O mesmo separa COMPRAR de RECICLAR, que são a
+  mesma ação para as regras e sons diferentes para o ouvido.
+- **Resultado com MOTIVO** (`BuildResult` no Bulwark, `StepResult`/
+  `ActionResult` no Tactics, `MoveResult` no Klondike) — **QUATRO aparições, e
+  mesmo assim não vira tipo da engine.** A recusa carrega por que foi recusada,
+  e a tela transforma isso em frase ("coluna vazia só aceita rei" ensina
+  paciência; "não pode" não ensina nada). Morre no critério 1 pelo mesmo motivo
+  do `Events` por quadro: os MOTIVOS são o jogo — `NeedsKing`, `NeedsAce`,
+  `WrongSuitOrRank` não significam nada fora da paciência. Fica registrado como
+  **idioma da casa**, e vale registrar justamente porque quatro aparições é
+  mais do que várias candidatas promovidas tiveram: a repetição de um PADRÃO
+  não é a repetição de um MECANISMO, e confundir os dois é como um depósito
+  começa.
 - **Formatação de tempo** — o common já tem `formatMillis` (hh:mm:ss.mmm, do
   8puzzle) e o mario criou `ui::formatTime` (M:SS.cc) SEM reusar: os formatos
   divergem de propósito (cronômetro de puzzle vs HUD de arcade). Formato de
@@ -427,6 +489,44 @@ primeiro escolhido POR uma task desta lista, a 18):
   pede nada do laço de tempo.
 - **`cengine::audio` (0.9.0) e `cengine::anim` (0.10.0) — 3º e 2º consumidores,
   sem uma linha de mudança.** Confirmam as duas portas num gênero novo.
+
+Sweep de 2026-07-31 (Klondike completo — décimo primeiro jogo, uma paciência; o
+primeiro escolhido SEM dívida, por ser o pior caso de input com ponteiro):
+
+- **Zero promoções, e é o resultado certo.** O jogo entregou três achados em
+  vez de código: hit-testing tem DIREÇÃO (na 18, acima), o evento não pode
+  morar dentro do que o undo copia (Emenda 2b, acima) e "cor escolhida contra
+  um fundo provisório é dívida silenciosa" — este último nota de projeto, não
+  candidata.
+- **A aposta que escolheu o jogo ERROU, e o erro estava na frase.** O plano
+  apostou que N alvos sobrepostos "numa tela só" produziriam o desenho da 18 —
+  e "numa tela só" é exatamente o que faz não ser aquele problema.
+  Sobreposição INTRA-superfície é DESENHO (nove linhas, um dono só);
+  sobreposição ENTRE camadas é ARQUITETURA. São homônimos. **Lição de método:
+  uma aposta só vale se a frase que a enuncia sobreviver ao jogo.**
+- **Duas candidatas novas, ambas 1/2 e nenhuma com task aberta:** o vocabulário
+  de DRAG (acima) e a máscara ASCII dos tools de atlas (essa fica no ledger do
+  `platform-theforge-common`, que é a casa do `Paint.ps1`).
+- **Uma candidata nova MORTA com argumento:** undo por snapshot (acima).
+- **O que ele NÃO usou desenha a forma da engine.** O domínio do Klondike não
+  linka NENHUM módulo da cengine, e o jogo inteiro usa quatro: `core`,
+  `routing`, `input`, `audio`. Ficaram de fora os quatro módulos de MUNDO 2D, e
+  cada um por um motivo: `collision2d` (paciência não faz geometria — é
+  retângulo contendo ponto), `camera2d` (a mesa cabe na janela), `anim`
+  (segundo jogo seguido sem animação — jogo de tabuleiro não anima) e `grid2d`
+  (as pilhas têm geometria, mas não é grade de células iguais: o leque avança
+  30px e a carta mede 44px, então elas se cobrem). **A engine tem uma metade de
+  MUNDO e uma metade de APLICAÇÃO, e os dois últimos jogos usaram quase só a
+  segunda.** Não é lacuna de nenhum lado — é previsão de onde as próximas
+  candidatas devem aparecer.
+- **A pergunta de escolha do próximo jogo volta a ter resposta**, e ela veio dos
+  dois últimos jogos declararem o MESMO preço: **dois leitores de evento**. O
+  desenho "a leitura consome" foi registrado com preço explícito nas duas vezes
+  que apareceu (Tactics e Klondike) — *um leitor só; a segunda leitura vê
+  vazio* — e nas duas o leitor era a cena traduzindo em som. Um jogo com dois
+  leitores (som + log de ações, som + replay, som + estatística) decide se o
+  desenho aguenta. É o caso que falta para fechar a discussão dos eventos,
+  aberta desde o Bulwark.
 
 ## Legenda de status
 

@@ -242,16 +242,16 @@
 <div class="wrap">
 
   <header class="masthead">
-    <div class="eyebrow">cengine · platform-theforge-common · 10 jogos</div>
+    <div class="eyebrow">cengine · platform-theforge-common · 11 jogos</div>
     <h1>Retrato do ecossistema</h1>
-    <div class="stamp">Atualizado em <b>2026-07-28</b>, após a revisão de candidatas do <b>Tactics</b> (10º jogo).</div>
+    <div class="stamp">Atualizado em <b>2026-07-31</b>, após a revisão de candidatas do <b>Klondike</b> (11º jogo).</div>
   </header>
 
   <div class="kpis">
     <div class="kpi"><div class="n">7</div><div class="l">módulos vivos na engine</div></div>
     <div class="kpi"><div class="n">10<small> / 11</small></div><div class="l">candidatas de jogo promovidas</div></div>
     <div class="kpi"><div class="n">17</div><div class="l">releases da cengine</div></div>
-    <div class="kpi"><div class="n">162</div><div class="l">commits somados nos jogos</div></div>
+    <div class="kpi"><div class="n">173</div><div class="l">commits somados nos jogos</div></div>
   </div>
 
   <section>
@@ -387,7 +387,8 @@
           <tr><td class="idx">7</td><td class="name">starforce</td><td class="num">14</td><td class="mono">07-22</td><td class="mono">0.10.0</td><td class="num">7</td><td>massa de entidades, roteiro por scroll</td></tr>
           <tr><td class="idx">8</td><td class="name">delve</td><td class="num">11</td><td class="mono">07-28</td><td class="mono">0.10.0</td><td class="num">4</td><td>pilha de camadas, jogo por turnos</td></tr>
           <tr><td class="idx">9</td><td class="name">bulwark</td><td class="num">9</td><td class="mono">07-28</td><td class="mono">0.13.0</td><td class="num">4</td><td><b>mouse</b> — o 1º do ecossistema; economia; a pilha validada</td></tr>
-          <tr><td class="idx">10</td><td class="name">tactics</td><td class="num">10</td><td class="mono">07-30</td><td class="mono">0.14.0</td><td class="num">4</td><td><b>iniciativa e orçamento de ação</b>; jogo só de ponteiro; o 1º pathfinding</td></tr>
+          <tr><td class="idx">10</td><td class="name">tactics</td><td class="num">11</td><td class="mono">07-30</td><td class="mono">0.14.0</td><td class="num">4</td><td><b>iniciativa e orçamento de ação</b>; jogo só de ponteiro; o 1º pathfinding</td></tr>
+          <tr><td class="idx">11</td><td class="name">klondike</td><td class="num">10</td><td class="mono">07-31</td><td class="mono">0.14.0</td><td class="num">4</td><td><b>o arrastar</b>; informação escondida; o 1º <b>undo</b> do ecossistema</td></tr>
         </tbody>
       </table>
     </div>
@@ -402,11 +403,11 @@
         <div class="t">Critério 2 — dois consumidores</div>
         <div class="big">2 seguradas</div>
         <div class="bar"><i style="width:78%;background:var(--good)"></i><i style="width:22%;background:var(--warn)"></i></div>
-        <p>Das 11 candidatas nascidas em jogos, 10 subiram. E as 2 que restam <strong>não esperam mais consumidor</strong>: a 18 espera <em>desenho</em>, a 22 espera um caso que quatro jogos com colisão nunca produziram.</p>
+        <p>Das 11 candidatas nascidas em jogos, 10 subiram. E as 2 que restam <strong>não esperam mais consumidor</strong>: a 18 espera <em>desenho</em>, a 22 espera um caso que cinco jogos com colisão nunca produziram.</p>
       </div>
       <div class="sieve">
         <div class="t">Critério 1 — mecanismo × política</div>
-        <div class="big">8 vetadas</div>
+        <div class="big">9 vetadas</div>
         <div class="bar"><i style="width:100%;background:var(--off)"></i></div>
         <p>Recusadas por serem vocabulário de jogo, não mecanismo. Marcadas como “não reabrir sem argumento novo”.</p>
       </div>
@@ -420,9 +421,12 @@
       <span class="chip">Formatação de tempo</span>
       <span class="chip">Cooldown do som de tiro</span>
       <span class="chip">Busca em largura sobre grade</span>
+      <span class="chip">Resultado com motivo</span>
     </div>
     <p><strong>Events por quadro</strong> é o caso mais instrutivo: zelda e Delve têm os dois, na mesma forma — um struct de bools. Passa no critério 2 e morre no critério 1. Dois consumidores não salvam uma abstração cujo conteúdo é nome de coisa do jogo.</p>
     <p>O Bulwark deu a ele uma <strong>regra, paga com bug</strong>: <em>quem para de atualizar também tem de parar de reportar.</em> O tempo de vida do evento está amarrado ao do <code>update</code> — e todo lugar onde o <code>update</code> para é um lugar onde o evento mente. Não vira tipo da engine; vira teste-padrão: <em>depois do fim, os eventos estão vazios</em>.</p>
+    <p><strong>O Klondike acrescentou a segunda metade dessa regra</strong>, e só um jogo com <em>undo</em> podia achá-la: não basta amarrar o evento à leitura — ele também tem de viver <strong>fora do que se copia</strong>. A mesa é o que o snapshot guarda; um evento dentro dela seria restaurado junto, e o som que acabou de acontecer sumiria porque a cópia foi tirada <em>antes</em> dele. Dito curto: <strong>o undo restaura o estado; ele não desfaz o passado de quem está ouvindo.</strong></p>
+    <p>Um sétimo idioma entrou na lista com <strong>quatro aparições</strong> e sem virar tipo: <strong>resultado com motivo</strong> (<code>BuildResult</code>, <code>ActionResult</code>, <code>MoveResult</code>). A recusa carrega por que foi recusada, e a tela vira frase — mas os motivos <em>são</em> o jogo: <code>NeedsKing</code> não significa nada fora da paciência. Vale registrar porque quatro aparições é mais do que várias candidatas promovidas tiveram: <strong>a repetição de um padrão não é a repetição de um mecanismo</strong>, e confundir os dois é como um depósito começa.</p>
     <p>Já o <strong>cooldown do som de tiro</strong> entrou na lista fechando <strong>2 de 2</strong> — e mesmo assim não sobe. Quantos tiros por segundo o ouvido aguenta é política de apresentação. Registrar que uma previsão se confirmou importa tanto quanto registrar uma promoção.</p>
   </section>
 
@@ -433,24 +437,31 @@
       <div class="card">
         <span class="tag waiting">2 contornos que divergem</span>
         <h3>18 — roteamento espacial do clique</h3>
-        <p>Bulwark e Tactics bateram no mesmo limite e resolveram de formas <strong>diferentes</strong> — sinal de que o problema está maduro e a solução não. E a correção óbvia (o <code>input()</code> reportar consumo) <strong>não funcionaria sozinha</strong>: o input é <em>puxado</em> de uma fila global, então numa cascata a primeira camada comeria o clique antes de decidir que não era dela. Espera um desenho que resolva as três metades juntas — e um jogo que sofra o bastante para pagar o breaking.</p>
+        <p>Bulwark e Tactics bateram no mesmo limite e resolveram de formas <strong>diferentes</strong> — sinal de que o problema está maduro e a solução não. E a correção óbvia (o <code>input()</code> reportar consumo) <strong>não funcionaria sozinha</strong>: o input é <em>puxado</em> de uma fila global, então numa cascata a primeira camada comeria o clique antes de decidir que não era dela.</p>
+        <p><strong>O Klondike apostou nesta task e perdeu:</strong> sobreposição <em>dentro</em> de uma superfície (doze pares de cartas se cobrindo) resolve em nove linhas com um dono só, e ele nem usa <code>SceneStack</code>. Em compensação produziu um argumento novo que aponta <em>contra</em> a solução imaginada: <strong>hit-testing tem direção</strong> — a área de acerto do mesmo objeto difere se o input está <em>pegando</em> (mira uma carta) ou <em>soltando</em> (mira uma pilha). “Sob o ponto” não é uma pergunta única: depende do <b>papel</b>, que é vocabulário do jogo.</p>
       </div>
       <div class="card">
         <span class="tag waiting">0 de 2</span>
         <h3>22 — resolução de colisão (MTV)</h3>
-        <p>Quatro jogos com colisão e todos resolveram por eixo separado. O caso de penetração/MTV nunca apareceu em nenhum deles.</p>
+        <p>Cinco jogos com colisão e todos resolveram por eixo separado. O caso de penetração/MTV nunca apareceu em nenhum deles.</p>
       </div>
     </div>
     <div class="callout">
-      <div class="t">Duas candidatas levantadas e mortas, com argumento</div>
+      <div class="t">Duas candidatas novas, esperando o segundo consumidor (Klondike, 1 de 2 cada)</div>
+      <p><strong>Vocabulário de drag</strong> — <code>drag()</code> (estado) + <code>readDrop()</code> (edge), hoje local no casco. Fica lá pelo caminho que o mouse já percorreu: viveu no <code>forgeui</code> por dois jogos e só subiu quando o 2º consumidor usou a forma do 1º <em>sem pedir mudança de API</em>. A forma provável já tem precedente — estado + edge é o mesmo par do teclado.</p>
+      <p><strong>Máscara ASCII</strong> nos tools de atlas (<code>#</code> pinta, <code>.</code> deixa passar). Os dez tools anteriores só desenharam retângulos, e <code>Fill-Rect</code> bastou; um naipe de copas tem dois lobos e um bico. A regra é a de sempre: <em>o próximo jogo com arte que não seja retângulo extrai, não copia.</em></p>
+    </div>
+    <div class="callout">
+      <div class="t">Três candidatas levantadas e mortas, com argumento</div>
       <p><strong>Pool de efeitos transitórios</strong> (Bulwark): parecia 2 de 2, mas <strong>a duplicação real já tinha subido na 0.12.0</strong>. O que sobrou são ~6 linhas de <code>std::vector</code>, e nem iguais. <em>Uma promoção bem feita esvazia a próxima candidata.</em></p>
       <p><strong>Busca em largura sobre grade</strong> (Tactics): o primeiro pathfinding do ecossistema — mecanismo puro, testável sem tela. Vetado porque os dois jogos com IA que navega <strong>recusaram pathfinding por escrito, no próprio código</strong>: o zelda desliza na parede, o delve encalha na quina de propósito (“e até útil: dá ao jogador um jeito de quebrar perseguição”). Não é “ainda não há dois” — é <strong>o segundo caso existe e escolheu o contrário</strong>.</p>
+      <p><strong>Undo por snapshot</strong> (Klondike): o <code>Game</code> é mesa + <code>std::vector&lt;Table&gt;</code>. Morre por dois motivos, e o primeiro já era lei da casa — <em>se não dá para descrever a candidata sem citar <code>std::vector</code>, é biblioteca padrão, não engine</em>. O segundo é melhor: <strong>a parte difícil não é o container, é decidir o que entra no snapshot</strong> — a mesa entra, o histórico não, os eventos não. Nada disso está no container. Evidência: 1 de 11.</p>
     </div>
   </section>
 
   <section>
     <h2>Leitura</h2>
-    <p>A engine cresceu 7 módulos por extração, nenhum por especulação. O funil tem duas peneiras e as duas trabalham: o critério dos dois consumidores segura 2 candidatas hoje, e o corte mecanismo × política matou 8.</p>
+    <p>A engine cresceu 7 módulos por extração, nenhum por especulação. O funil tem duas peneiras e as duas trabalham: o critério dos dois consumidores segura 2 candidatas hoje, e o corte mecanismo × política matou 9.</p>
     <p>O Tactics mostrou o filtro respondendo <strong>três coisas diferentes no mesmo jogo</strong>: a 26 subiu porque a cópia era idêntica linha a linha; a 27 subiu por um motivo melhor que contagem — <em>o 2º consumidor não pediu nenhuma mudança de API</em>; e a 18 não subiu porque duas cópias que <em>divergem</em> são sinal de problema maduro e solução imatura. Um filtro que só soubesse contar teria promovido as três.</p>
     <p>O que está parado é pouco. A 22 espera um caso que nenhum jogo produziu; a 18 já tem os dois consumidores e espera <em>desenho</em>.</p>
     <div class="callout">
@@ -459,7 +470,11 @@
       <p><strong>O Bulwark foi o teste dessa fórmula, e ela passou.</strong> Ele nasceu devendo três extrações já prometidas por escrito e executou as três <em>dentro</em> dos degraus — mais quatro correções que só apareceram jogando. Sete releases de lib em um jogo de oito commits. A consequência é que a revisão final dele chegou vazia, e <strong>isso é o desenho funcionando, não a peneira apertada demais</strong>: as promoções aconteceram mais cedo.</p>
       <p>Por isso a pergunta antes de escolher o próximo jogo não é <em>“que gênero falta?”</em> — é <strong>“que candidata parada ele fecharia?”</strong>. O Bulwark foi escolhido porque convertia a task 18. Converteu. O Tactics foi escolhido para fechar três, e fechou duas — com o parecer da terceira valendo mais que a promoção teria valido.</p>
       <p><strong>E aqui a pergunta chega ao seu limite, pela primeira vez.</strong> Depois do Tactics não sobra candidata que um jogo feche <em>por existir</em>. Escolher o 11º jogo por dívida seria fingir que há uma — o critério precisa mudar, e reconhecer isso em voz alta é mais útil que forçar a pergunta velha.</p>
+      <p><strong>O Klondike foi escolhido por esse critério novo</strong> (o pior caso de input com ponteiro), com uma <em>aposta</em> no lugar de uma dívida — e a aposta errou. Fica a lição de método: <strong>uma aposta só vale se a frase que a enuncia sobreviver ao jogo</strong>. Ainda assim o degrau não foi perdido: foi ele que produziu o achado da <em>direção</em> do hit-testing.</p>
+      <p><strong>E a pergunta antiga volta a ter resposta</strong>, porque os dois últimos jogos declararam o mesmo preço: <strong>dois leitores de evento</strong>. “A leitura consome” foi escolhido duas vezes com o custo explícito — <em>um leitor só; a segunda leitura vê vazio</em> — e nas duas o leitor era a cena, traduzindo em som. Um jogo com dois leitores (som + log de ações, som + replay, som + estatística) decide se o desenho aguenta. É o caso que falta para fechar a discussão dos eventos, aberta desde o Bulwark.</p>
       <p>Um contraponto que o Tactics deixou: <strong>um jogo completo pode não usar módulos disponíveis, e isso é informação, não lacuna.</strong> Ele ignorou <code>anim</code> (um tabuleiro por turnos não anima) e <code>collision2d</code> (células inteiras não fazem geometria). Medir um módulo por quantos jogos o linkam mediria a coincidência de gêneros, não a qualidade do corte.</p>
+      <p><strong>O Klondike levou isso ao extremo, e com isso desenhou a forma da engine.</strong> O domínio dele não linka <em>nenhum</em> módulo, e o jogo inteiro usa quatro: <code>core</code>, <code>routing</code>, <code>input</code>, <code>audio</code>. Ficaram de fora os quatro módulos de mundo 2D, cada um por um motivo próprio — <code>collision2d</code> (paciência não faz geometria: é retângulo contendo ponto), <code>camera2d</code> (a mesa cabe na janela), <code>anim</code> (segundo jogo seguido sem animação) e <code>grid2d</code> (as pilhas têm geometria, mas o leque avança 30px e a carta mede 44px: elas se cobrem, e grade regular seria a abstração errada).</p>
+      <p>A engine tem uma metade de <strong>mundo</strong> (colisão, câmera, animação, grade) e uma metade de <strong>aplicação</strong> (loop, routing, input, áudio). Os dois últimos jogos usaram quase só a segunda — e isso é previsão de onde as próximas candidatas devem aparecer.</p>
     </div>
   </section>
 
