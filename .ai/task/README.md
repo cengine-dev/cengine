@@ -134,6 +134,18 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   insuficiente para overlay clicável NÃO-modal — com ponteiro, "quem recebe o
   clique" é espacial, e `IScene::input()` não reporta consumo. Não corrigido
   por ter UM consumidor (critério 2).
+  **O 11º jogo (Klondike, 2026-07-31) apostou nesta task e PERDEU a aposta:**
+  sobreposição INTRA-superfície (12 pares de cartas se cobrindo) resolve em 9
+  linhas com um dono só, e o jogo nem usa `SceneStack` — contribuição de
+  evidência: zero. Mas trouxe **um argumento novo: hit-testing tem DIREÇÃO** —
+  a área de acerto do mesmo objeto difere se o input está PEGANDO ou SOLTANDO
+  (achado jogando: soltar no pé do leque morria em silêncio). Nem Bulwark nem
+  Tactics podiam ter achado, porque neles o clique tinha um papel só; foi
+  preciso um gesto com DUAS PONTAS. **Consequência: "sob o ponto" não é uma
+  pergunta única — depende do PAPEL, que é vocabulário do jogo. Isso
+  ENFRAQUECE a ideia de rotear por posição na engine.** A metade 3 (posição no
+  vocabulário da engine) fechou com a task 27 na 0.14.0; restam a cascata, o
+  input-puxado, e agora o papel.
   **O 2º consumidor bateu (Tactics, degrau 07, 2026-07-30) — e a resposta é
   NÃO corrigir**, com três razões que valem mais que a correção valeria:
   (a) os dois contornos têm FORMATOS DIFERENTES (no Bulwark a geometria vaza

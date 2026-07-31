@@ -243,6 +243,55 @@ em `IScene` quebra o build de sete jogos no proximo rebuild.
 metades juntas (cascata + espiar-sem-consumir + posicao no vocabulario da
 engine), e um jogo que precise disso o bastante para pagar o breaking. Ate la,
 resolver na cena continua sendo a resposta certa, e custa ~12 linhas.
+
+### O 11o jogo apostou nesta task e PERDEU a aposta — mas trouxe um argumento novo (Klondike, 2026-07-31)
+
+O Klondike (paciencia) foi escolhido com esta aposta escrita no plano dele:
+*"se algum jogo vai produzir o DESENHO que a task 18 espera, e um jogo onde N
+alvos clicaveis se sobrepoem numa tela so."*
+
+**A aposta errou, e o erro esta na propria frase: "numa tela so" e exatamente o
+que faz aquele NAO ser este problema.** O jogo tem sobreposicao de sobra (uma
+coluna cheia tem doze pares de cartas se cobrindo) e resolve tudo em NOVE
+LINHAS dentro de uma funcao, porque os alvos tem um dono so: uma cena, uma
+lista, uma ordem — varre de tras para frente e a de cima ganha. Klondike nem
+usa `SceneStack`. **Contribuicao para a evidencia desta task: zero.**
+
+Sobreposicao INTRA-superficie e um problema de desenho; sobreposicao ENTRE
+camadas e um problema de arquitetura. Sao homonimos, e confundi-los foi o erro
+do plano daquele jogo.
+
+**O argumento novo, esse sim:** *hit-testing tem DIRECAO.* A area de acerto de
+um mesmo objeto visual e DIFERENTE conforme o input esteja PEGANDO ou SOLTANDO
+— para pegar, o jogador mira uma carta especifica (area justa: acertar a errada
+e pior que nao acertar nenhuma); para soltar, ele mira uma PILHA, e o gesto
+natural termina com o cursor abaixo da ultima carta. Viraram duas funcoes no
+jogo, e a descoberta veio de jogar: com area unica, soltar no pe do leque
+morria em silencio.
+
+Nem o Bulwark nem o Tactics podiam ter achado isso: nos dois, clicar tinha um
+papel so. Foi preciso um GESTO COM DUAS PONTAS (o arrastar) para o segundo
+papel existir.
+
+**E isso muda o desenho esperado desta task, num ponto especifico.** A ideia
+mais natural sempre foi "a pilha pergunta quem esta sob o ponto". O Klondike
+mostra que **"sob o ponto" nao e uma pergunta unica**: depende do PAPEL do
+input. Um mecanismo de engine que roteasse por posicao teria de carregar o
+papel junto — e papel e vocabulario do JOGO (pegar/soltar; selecionar/atacar no
+Tactics; construir/cancelar no Bulwark). A engine nao pode enumerar papeis sem
+virar deposito, nem ignora-los sem rotear errado.
+
+**Isso ENFRAQUECE a ideia de rotear por posicao na engine, e nao a fortalece.**
+Os pareceres anteriores tratavam a posicao como suficiente; ela nao e.
+
+Placar das metades, atualizado:
+
+| metade | estado |
+|---|---|
+| 1. `input()` nao reporta consumo (sem cascata) | aberta |
+| 2. input PUXADO de fila global (a 1a camada come o clique) | aberta |
+| 3. a engine nao sabe falar de posicao | **RESOLVIDA** (0.14.0, task 27) |
+| 4. "sob o ponto" depende do PAPEL do input | **nova, e aponta contra a solucao imaginada** |
 - **Categoria:** Arquitetura / routing
 - **Depende de:** 13 done (Router x Repository separados), 15 done (modo
   hospedado) e 16 done (present no fim do quadro).
