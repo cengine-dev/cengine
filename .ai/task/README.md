@@ -347,6 +347,43 @@ estruturalmente parecidas mas **semanticamente diferentes**. Semelhança de form
   ouvindo.** É a mesma fronteira que aquele jogo já tinha desenhado para o que
   o jogador VIU — o conhecimento mora na cabeça dele, fora do domínio.
 
+  **Emenda 2c (Counter, degrau 08, 2026-07-31) — a pergunta que estava aberta
+  desde o Bulwark FECHOU, e a resposta é que ela continha um erro.** O 12º jogo
+  foi escolhido exatamente para testar se "a leitura consome" aguenta TRÊS
+  leitores com tempos de vida diferentes (som que descarta, feed que guarda um
+  pouco, relatório que acumula o dia). Tentando escrever os três:
+
+  > **O relatório lê ESTADO. O som e o feed querem o MESMO instante, e por isso
+  > são UM leitor com dois usos.**
+
+  O relatório não *prefere* estado — ele **não pode** ler evento sem duplicar o
+  domínio: o `DayClosing` já é o dia inteiro contado, e um acumulador de eventos
+  chegaria nos mesmos números por um segundo caminho (o padrão que este
+  ecossistema mata desde sempre, aqui com a cara mais inocente possível). E o
+  feed não é um terceiro tipo de leitor: é uma VISTA construída a partir do
+  mesmo instante que o som recebe. Em código, `readEvents()` chama `takeEvents()`
+  **uma vez** e passa o mesmo valor aos dois usos.
+
+  A regra que sai disso:
+
+  > **Tempo de vida diferente é a assinatura de uma FONTE diferente, e não de um
+  > leitor a mais.** Quem quer o instante lê evento; quem quer o total lê
+  > estado; quem quer "os últimos N" constrói uma vista a partir do instante.
+
+  **E o preço declarado desde o Tactics muda de natureza: "um leitor só" nunca
+  foi uma limitação** — era a descrição de que existe **um ponto de leitura**, e
+  distribuir dali para quantos usos houver é de graça. O que continua verdadeiro
+  (e vale manter escrito) é que **duas leituras independentes do domínio no
+  mesmo quadro não funcionam**: a segunda vê vazio. Isso é restrição de
+  arquitetura, não defeito — e some quando o jogo aceita ter um ponto de
+  leitura.
+
+  Um subproduto, achado tentando dar som a tudo: **metade dos sons de um jogo
+  não vem de evento.** Uns vêm do RETORNO da chamada que a própria cena fez
+  (compra aceita/recusada — quem clicou já recebe a resposta), outros do ESTADO
+  no fechamento. Forçar tudo a entrar pela porta dos eventos seria descrever a
+  mesma coisa duas vezes só por uniformidade.
+
   E o Klondike deixou um subproduto que vale como método: **o "antes" que o
   undo já exige responde perguntas de evento de graça.** O destampe acontece
   dentro do movimento e o `Game` não o vê; fazer a `Table` reportar
