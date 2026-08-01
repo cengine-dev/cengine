@@ -216,6 +216,26 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   dentro de si guardaria o histórico dentro do snapshot; os eventos não — ver a
   Emenda 2b). Nenhuma dessas respostas está no container. Evidência: **1/11**,
   nenhum outro jogo tem desfazer.
+- **Interpolação (tween)** — **candidata NOVA e VETADA na revisão do Counter
+  (2026-07-31), com contra-evidência.** A arte do 12º jogo pediu mover algo
+  visual gradualmente até um alvo (a fila que anda, o cliente que sai de cena), e
+  o `cengine::anim` não serve: ele é **clipe de QUADROS**, e tween é outro
+  mecanismo. Mesmo assim não vira candidata, pelo mesmo formato do veto à busca
+  em largura — **o segundo caso existe e escolheu o contrário**: mario
+  (`camera/Camera.h:37`) e zelda (`camera/Camera.h:34`) **recusaram lerp por
+  escrito, no próprio código** (*"sem lerp: o foco já se move suave, então a
+  câmera também — rolagem suave sem inventar suavização"*), e o tactics recusou
+  animação inteira (*"as peças ficam paradas até alguém movê-las"*). Contagem
+  honesta: **zero implementações, três recusas** — e o jogo que quis também não
+  escreveu.
+  **O achado vale mais que o veto:** as recusas do mario e do zelda têm o mesmo
+  motivo — **mundo contínuo não precisa de tween porque já É tween**. Quem
+  precisaria são os jogos DISCRETOS, onde o estado dá SALTOS (uma fila que
+  encolhe de um em um, uma peça que muda de casa). Logo: **interpolação é a
+  primeira coisa da metade de MUNDO desta engine que um jogo DISCRETO pediria** —
+  e é por isso que ela nunca apareceu, já que essa metade foi construída por
+  jogos contínuos e os três últimos jogos são discretos. **Gate preciso:** um
+  jogo discreto que ANIME a transição de estado, e que escreva o tween à mão.
 - **`Path`/waypoint** — **1/2 e sem task aberta**: busca no ecossistema inteiro
   não achou outro jogo com movimento por waypoint. Registrado para não se
   perder; não vira task até existir o segundo.
@@ -346,6 +366,14 @@ estruturalmente parecidas mas **semanticamente diferentes**. Semelhança de form
   Dito curto: **o undo restaura o ESTADO; ele não desfaz o PASSADO de quem está
   ouvindo.** É a mesma fronteira que aquele jogo já tinha desenhado para o que
   o jogador VIU — o conhecimento mora na cabeça dele, fora do domínio.
+
+  **Refinamento (Counter, degrau 07, 2026-07-31):** o 12º jogo bateu no mesmo
+  problema pelo outro lado — lá os eventos não podiam morar no `Day`, que a
+  virada da noite DESTRÓI, senão o último instante do serviço (a fila indo
+  embora porque o grão acabou) nunca chegaria ao leitor. Cópia e destruição são
+  o mesmo caso, e a frase que cobre os dois é mais curta:
+
+  > **O evento não mora no que não sobrevive ao leitor.**
 
   **Emenda 2c (Counter, degrau 08, 2026-07-31) — a pergunta que estava aberta
   desde o Bulwark FECHOU, e a resposta é que ela continha um erro.** O 12º jogo
@@ -564,6 +592,43 @@ primeiro escolhido SEM dívida, por ser o pior caso de input com ponteiro):
   leitores (som + log de ações, som + replay, som + estatística) decide se o
   desenho aguenta. É o caso que falta para fechar a discussão dos eventos,
   aberta desde o Bulwark.
+
+Sweep de 2026-07-31 (Counter completo — décimo segundo jogo, uma barraca de café
+por dias; o primeiro em dois jogos escolhido por uma DÍVIDA de verdade):
+
+- **A dívida foi PAGA, e a resposta corrigiu a pergunta.** Ver a Emenda 2c
+  acima. Em uma linha: *tempo de vida diferente é a assinatura de uma FONTE
+  diferente, e não de um leitor a mais* — e "um leitor só" nunca foi limitação,
+  era a descrição de que existe um PONTO de leitura.
+- **Uma promoção, e no casco:** `Paint-Mask` (common 0.11.0), com este jogo como
+  segundo consumidor da máscara ASCII que o Klondike deixou registrada. **A
+  fórmula "o próximo jogo EXTRAI, não copia" fechou um ciclo completo pela
+  quarta vez** (depois de `forgeaudio`, `Write-Dds` e o próprio `Paint.ps1`), e
+  em nenhum momento existiu uma segunda cópia manual.
+- **Uma candidata nova, vetada com contra-evidência:** interpolação (acima).
+- **A persistência NÃO virou a 3ª evidência do repositório-de-arquivo.** O que
+  ficou parecido com o `FileRecordRepository` foram quinze linhas de `fstream`;
+  o que este jogo precisou (formato versionado, recusa total, tudo-ou-nada na
+  leitura) não existe naqueles dois, porque **recorde perdido não machuca
+  ninguém**. É a versão `fstream` da lei do `std::vector`. E a interface não
+  nasceu, de propósito, mesmo com os irmãos tendo uma.
+- **O idioma "resultado com MOTIVO" ganhou a sua exceção**, na 6ª e 7ª
+  aparições: `setPrice` devolve `bool` porque há UM jeito só de falhar. **A
+  regra não é "sempre enum": é "o motivo importa quando há mais de um".** Vale
+  ter isso escrito antes que a repetição vire reflexo.
+- **Terceiro jogo seguido usando só a metade de APLICAÇÃO** (core, routing,
+  input, audio), e agora com uma explicação: a metade de MUNDO foi construída
+  por jogos CONTÍNUOS, e os três últimos são discretos.
+- **O achado do Klondike (hit-testing tem DIREÇÃO) segue com UM consumidor** —
+  registrado no `CounterPanel.h` deste jogo: aqui um botão tem um papel só, os
+  botões não se sobrepõem, e não há gesto com duas pontas. **Este jogo não conta
+  como segundo.**
+- **A pergunta para o 13º jogo**, na forma mais afiada que este ciclo produziu:
+  depois de três jogos discretos, o eixo que o ecossistema não visita há muito
+  tempo é o do **movimento contínuo** — que é justamente onde moram as
+  candidatas mais antigas (a 22 e o resto da metade de mundo). Não é dívida; é o
+  eixo com maior chance de produzir evidência, que é a pergunta certa quando não
+  há dívida.
 
 ## Legenda de status
 

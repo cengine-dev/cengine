@@ -14,7 +14,7 @@ deles sozinho responde "onde estamos".
 > mesma revisao**, senao um deles vira mentira silenciosa. Este `.md` e a
 > fonte legivel no terminal e no diff; o `.html` e a vista para olhar.
 
-**Ultima atualizacao:** 2026-07-31, apos a revisao do **Klondike** (11o jogo).
+**Ultima atualizacao:** 2026-07-31, apos a revisao do **Counter** (12o jogo).
 
 ---
 
@@ -23,10 +23,10 @@ deles sozinho responde "onde estamos".
 | repo | papel | estado |
 |---|---|---|
 | `cengine` | a engine | 27 tasks, 7 modulos, 17 releases, 3 ADRs |
-| `platform-theforge-common` | casco Windows/The-Forge | 7 tasks, todas done, 11 releases |
+| `platform-theforge-common` | casco Windows/The-Forge | 7 tasks, todas done, 12 releases |
 | `The-Forge` | dependencia externa (D3D12) | vendorizada |
 | `creative-lab` | orquestrador criativo (arte 2d, audio, 3d) | ex-`2d-art-lab`; nucleo neutro + pack `2d-art`; usado 1x (menu do Star Force) |
-| 11 jogos | consumidores de validacao | 173 commits somados |
+| 12 jogos | consumidores de validacao | 182 commits somados |
 
 ## Os jogos
 
@@ -43,6 +43,7 @@ deles sozinho responde "onde estamos".
 | 9 | bulwark | 9 | 07-28 | 0.13.0 | 4 (52 casos) | **MOUSE** (1o do ecossistema), economia, pilha VALIDADA |
 | 10 | tactics | 11 | 07-30 | 0.14.0 | 4 (65 casos) | **iniciativa e orcamento de acao**; jogo so de PONTEIRO; 1o pathfinding |
 | 11 | klondike | 10 | 07-31 | 0.14.0 | 4 (40 casos) | **o ARRASTAR**; informacao ESCONDIDA; o 1o UNDO do ecossistema |
+| 12 | counter | 10 | 07-31 | 0.14.0 | 5 (71 casos) | **consequencia ATRASADA**; persistencia de PARTIDA; os tres leitores |
 
 O 8puzzle tem 52 commits porque apanhou junto com a engine nascendo. Do
 terceiro em diante o custo estabiliza em ~11-16 commits por jogo — e isso e a
@@ -60,6 +61,10 @@ O Klondike custou 10 commits e **nao promoveu nada** — o primeiro jogo a
 fechar com placar zero. Entregou tres ACHADOS em vez de codigo, e dois deles
 so eram alcancaveis pelas fronteiras dele (um gesto com duas pontas, e o
 primeiro desfazer do ecossistema).
+
+O Counter tambem custou 10, com o dominio mais denso desde o Tactics (71 casos)
+— e foi o primeiro jogo escolhido por uma DIVIDA precisa. **Ele a pagou
+corrigindo a pergunta**, o que vale mais que o codigo que teria produzido.
 
 ## A engine, por natureza de task
 
@@ -125,11 +130,10 @@ duas candidatas NOVAS, essas sim: uma evidencia cada.
 - **22 (resolucao de colisao / MTV)** — 2/2 para eixo-separado, 0 para
   penetracao/MTV. Cinco jogos com colisao nao produziram o caso.
 
-**Duas candidatas novas esperando o SEGUNDO consumidor** (Klondike, 1/2 cada):
-o **vocabulario de DRAG** (`drag()` estado + `readDrop()` edge, hoje local no
-`forgeui`, no mesmo caminho que o mouse percorreu) e a **mascara ASCII** dos
-tools de atlas (`#` pinta, `.` deixa passar — os dez tools anteriores so
-desenharam retangulos, e um naipe nao e retangulo).
+**Uma candidata esperando o SEGUNDO consumidor:** o **vocabulario de DRAG**
+(`drag()` estado + `readDrop()` edge, hoje local no `forgeui`, no mesmo caminho
+que o mouse percorreu). A outra que estava aqui — a **mascara ASCII** — SUBIU:
+virou o `Paint-Mask` do common 0.11.0, com o Counter como segundo consumidor.
 
 ## O que foi levantado e MORTO, com argumento
 
@@ -144,6 +148,16 @@ desenharam retangulos, e um naipe nao e retangulo).
   fazer por preguica: os dois DECIDIRAM que perseguicao gulosa era o
   comportamento certo — no Delve, encalhar e ate ferramenta do jogador. Nao e
   "ainda nao ha dois": e "o segundo caso existe e escolheu o contrario".
+- **Interpolacao / tween** (revisao do Counter): a arte do 12o jogo pediu mover
+  algo visual gradualmente ate um alvo, e o `cengine::anim` nao serve (ele e
+  clipe de QUADROS). Vetada pelo mesmo formato do pathfinding — **o segundo caso
+  existe e escolheu o contrario**: mario e zelda **recusaram lerp por escrito**
+  (`camera/Camera.h`), e o tactics recusou animacao inteira. Zero
+  implementacoes, tres recusas. **O achado vale mais que o veto:** mundo
+  continuo nao precisa de tween porque ja E tween — quem precisaria sao os jogos
+  DISCRETOS, onde o estado da SALTOS. Logo, interpolacao e **a primeira coisa da
+  metade de MUNDO que um jogo discreto pediria**, e e por isso que ela nunca
+  apareceu: essa metade foi construida por jogos continuos.
 - **Undo por snapshot** (revisao do Klondike): o `Game` e mesa +
   `std::vector<Table>`. Morre por dois motivos, e o primeiro ja era lei da casa
   — *se nao da para descrever a candidata sem citar `std::vector`, e biblioteca
@@ -153,12 +167,13 @@ desenharam retangulos, e um naipe nao e retangulo).
 
 ## A outra peneira: vetadas como politica
 
-Nove candidatas foram explicitamente recusadas por serem **vocabulario de
+Dez candidatas foram explicitamente recusadas por serem **vocabulario de
 jogo**, com a marca "nao reabrir sem argumento novo":
 
 `Recordes` · `PlaySession` · `Wrap-around/toro` · `Fisica de plataforma` ·
 `Events por quadro` · `Formatacao de tempo` · `Cooldown do som de tiro` ·
-`Busca em largura sobre grade` · `Resultado com motivo`
+`Busca em largura sobre grade` · `Resultado com motivo` ·
+`Interpolacao / tween`
 
 O `Cooldown do som de tiro` entrou fechando **2/2** (starforce previu, bulwark
 confirmou) e mesmo assim **nao sobe**: quantos tiros por segundo o ouvido
@@ -192,7 +207,22 @@ foi tirada ANTES dele.
 > deve viver **fora do que se copia**.
 
 Dito curto: **o undo restaura o ESTADO; ele nao desfaz o PASSADO de quem esta
-ouvindo.**
+ouvindo.** O Counter bateu no mesmo problema pelo outro lado (o `Day` que a noite
+DESTROI), e a frase que cobre os dois e mais curta: **o evento nao mora no que
+nao sobrevive ao leitor.**
+
+**E o Counter FECHOU a discussao, corrigindo a pergunta** (Emenda 2c,
+2026-07-31). Ele foi escolhido para testar se o desenho aguenta TRES leitores
+com tempos de vida diferentes, e a resposta nao foi "aguentou" nem "quebrou":
+
+> O relatorio le ESTADO — ele nao PODE ler evento sem duplicar o dominio. O som
+> e o feed querem o MESMO instante, e por isso sao UM leitor com dois usos.
+
+Do que sai a regra: **tempo de vida diferente e a assinatura de uma FONTE
+diferente, e nao de um leitor a mais.** E o preco declarado desde o tactics muda
+de natureza: *"um leitor so"* nunca foi limitacao — era a descricao de que existe
+**um ponto de leitura**, e distribuir dali e de graca. A restricao real, essa
+sim, e que duas leituras INDEPENDENTES do dominio no mesmo quadro nao funcionam.
 
 O nono nome entrou na lista, com QUATRO aparicoes e sem virar tipo:
 **resultado com MOTIVO** (`BuildResult`, `StepResult`/`ActionResult`,
@@ -202,11 +232,16 @@ registrar porque quatro aparicoes e mais do que varias candidatas promovidas
 tiveram: **a repeticao de um PADRAO nao e a repeticao de um MECANISMO**, e
 confundir os dois e como um deposito comeca.
 
+**O Counter deu a esse idioma a sua EXCECAO**, na 6a e 7a aparicoes: `setPrice`
+devolve `bool`, porque ha UM jeito so de falhar. A regra da casa nao e "sempre
+enum": e **"o motivo importa quando ha mais de um"** — e a quinta aparicao de um
+padrao e exatamente onde ele comeca a ser aplicado sem pensar.
+
 ## Leitura
 
 O funil tem duas peneiras e as duas trabalham: o **criterio 2** (dois
 consumidores) segura 2 candidatas hoje; o **criterio 1** (mecanismo x
-politica) matou 9. Nenhum modulo entrou por especulacao.
+politica) matou 10. Nenhum modulo entrou por especulacao.
 
 E o Tactics mostrou o filtro respondendo TRES coisas diferentes no mesmo jogo:
 a 26 subiu porque a copia era identica linha a linha; a 27 subiu por um motivo
@@ -253,13 +288,28 @@ sobreviver ao jogo.** Ainda assim o degrau nao foi perdido — foi ele que
 produziu o achado da DIRECAO do hit-testing, que nenhum jogo de clique simples
 poderia ter dado.
 
-**E a pergunta antiga volta a ter resposta**, pela primeira vez desde o
-tactics, porque os dois ultimos jogos declararam o MESMO preco: **dois
-leitores de evento.** "A leitura consome" foi escolhido duas vezes com o preco
+**E a pergunta antiga voltou a ter resposta** depois do tactics, porque os dois
+jogos anteriores declararam o MESMO preco: **dois leitores de evento.** "A leitura consome" foi escolhido duas vezes com o preco
 explicito — *um leitor so; a segunda leitura ve vazio* — e nas duas o leitor
 era a cena, traduzindo em som. Um jogo com dois leitores (som + log de acoes,
 som + replay, som + estatistica) decide se o desenho aguenta. E o caso que
 falta para fechar a discussao dos eventos, aberta desde o bulwark.
+
+**O counter foi esse jogo, e fechou a discussao — corrigindo a pergunta.** Nao
+eram tres leitores de evento (ver a peneira de politica). Isso e o segundo caso
+em dois jogos de uma escolha por DIVIDA dar certo, e vale registrar o formato:
+**a divida precisa ser uma FRASE testavel**, e nao um genero. A do klondike era
+uma aposta sobre sobreposicao e errou; a do counter era um preco declarado duas
+vezes com as mesmas palavras, e ela produziu uma correcao que vale para todos os
+jogos futuros.
+
+**E a pergunta para o 13o jogo nao e uma divida — e um EIXO.** Depois de tres
+jogos discretos seguidos (tactics, klondike, counter), o que o ecossistema nao
+visita ha muito tempo e o **movimento continuo** — que e justamente onde moram
+as candidatas mais antigas (a 22, e o resto da metade de mundo, que agora se
+sabe ter sido construida por jogos continuos). Um jogo continuo com colisao de
+verdade fecharia a 22 ou a mataria com argumento, e diria se essa metade
+envelheceu bem depois de tres jogos sem uso.
 
 Um contraponto que o tactics deixou, util para a proxima escolha: **um jogo
 completo pode NAO USAR modulos disponiveis, e isso e informacao, nao lacuna.**
@@ -277,11 +327,18 @@ leque avanca 30px e a carta mede 44px: elas se cobrem, e grade regular seria a
 abstracao errada).
 
 > A engine tem uma metade de **MUNDO** (colisao, camera, animacao, grade) e uma
-> metade de **APLICACAO** (loop, routing, input, audio). Os dois ultimos jogos
+> metade de **APLICACAO** (loop, routing, input, audio). Os tres ultimos jogos
 > usaram quase so a segunda.
 
 Nao e lacuna de nenhum lado — e previsao de onde as proximas candidatas devem
 aparecer.
+
+**O counter explicou POR QUE**, e a explicacao e melhor que a observacao: a
+metade de mundo foi construida por jogos CONTINUOS, e os tres ultimos sao
+DISCRETOS. Foi tentando animar uma fila que isso ficou visivel — o que aquele
+jogo queria era INTERPOLACAO, e o `anim` da engine e clipe de quadros. **Nao e
+que a metade de mundo esteja velha: e que ela responde a uma pergunta que jogos
+discretos nao fazem.**
 
 ## Referencias
 
