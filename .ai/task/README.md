@@ -192,19 +192,28 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   API** — que é o sinal mais forte que este filtro consegue dar. O casco
   (common 0.9.0) guarda a instância e delega, e `forgeui::MouseClick` continua
   existindo como alias, então nenhum jogo mudou uma linha.
-- **Vocabulário de DRAG** — **1/2 e sem task aberta** (Klondike, 2026-07-31).
-  O arrastar nasceu no casco (common 0.10.0), LOCAL no `forgeui`: `drag()`
-  (estado) + `readDrop()` (edge), com `SetCapture`/`WM_CAPTURECHANGED`/
-  `cancelDrag` no WndProc. **Fica lá, pelo caminho que o mouse já percorreu**
-  (task 27): viveu no `forgeui` por dois jogos e só subiu quando o 2º
-  consumidor usou a forma do 1º sem pedir mudança de API. Duas notas para
-  quando o segundo chegar: (a) **a forma provável já tem precedente** — o par
-  estado+edge é o MESMO do teclado (`isHeld` + `readKey`, 0.8.0), e três portas
-  de input com a mesma forma seria evidência forte; (b) **o `SetCapture` não
-  espera nada**, já subiu por construção, porque o WndProc É o casco — era um
-  buraco que existia desde sempre e que nenhum jogo de clique acharia (sem
-  capturar o ponteiro, soltar o botão fora da janela não gera `WM_LBUTTONUP` e
-  o gesto fica pendurado para sempre).
+- **[28 (arrastar na porta de ponteiro)](28-drag-vocabulary-port.md)** —
+  **PROMOVIDA (0.15.0, 2026-08-03)**: `DragState` (estado) + `Drop` (edge) na
+  `cengine::input::Mouse`. O gate estava escrito e foi cumprido ao pé da letra —
+  o 2º consumidor (**cue**, degrau 06, a tacada por arrasto) usou **as duas
+  leituras, os quatro campos de cada uma, e não pediu nenhuma mudança de API**.
+  Três coisas que este ciclo produziu além da promoção:
+  (a) **a previsão do ledger acertou**: "a forma provável já tem precedente — o
+  par estado+edge é o MESMO do teclado" — são três portas de input com a mesma
+  forma agora, e o arrastar é o caso em que a dualidade não é conveniência e sim
+  necessidade (o MESMO aperto abre as duas leituras, e não dá para saber qual o
+  jogador quis até ele soltar);
+  (b) **uma recusa a opinar foi TESTADA em vez de só declarada** — o Klondike
+  escreveu que a folga em pixels é política do jogo "porque depende do tamanho
+  do alvo"; o cue escolheu 12 onde o Klondike usa 8, para um alvo de 20 pixels
+  contra 90, e medindo outra pergunta ("quis mesmo tacar?" contra "errou o
+  alvo?"). **Precedente: quando o mecanismo tem um número de tolerância, o
+  número fica no consumidor;**
+  (c) **o que o 2º consumidor notou de falta e decidiu NÃO pedir** — o `Drop`
+  não carrega o instante em que o gesto começou. O cue mediu o caso (puxar
+  enquanto as bolas rolam, soltar depois de pararem) e ficou de fora, porque é
+  informação que o próprio jogo tem com um `bool`. O `SetCapture` segue no
+  casco, como o ledger antecipou: o WndProc **é** o casco.
 - **Undo por snapshot** — **MORTA na revisão do Klondike, com argumento.** O
   `Game` é mesa + `std::vector<Table>` e `undo()` restaura o topo; parece
   mecanismo puro e testável. Morre por dois motivos, e o primeiro já é lei da

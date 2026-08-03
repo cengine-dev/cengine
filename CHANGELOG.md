@@ -5,6 +5,81 @@ All notable changes to CEngine are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-08-03
+
+O ponteiro aprende a **ARRASTAR**: `DragState` + `Drop` na
+`cengine::input::Mouse` (task 28).
+
+> **Nao e breaking.** Puramente aditivo — os metodos novos convivem com a
+> posicao e a fila de cliques da 0.14.0, e o casco (`platform-theforge-common`
+> 0.12.0) delega mantendo `forgeui::DragState`/`forgeui::Drop` como alias.
+> **Nenhum jogo mudou uma linha.**
+
+### Added
+
+- **`DragState`** (estado) — `active`, a origem (`startX`/`startY`) e o ponto
+  atual (`x`/`y`). Lido todo quadro, para desenhar o que esta na mao.
+- **`Drop`** (edge) — um gesto que TERMINOU, com as duas pontas juntas.
+  Consumido no maximo um por `input()`, mesma politica das outras filas.
+- **`pushDown`/`pushUp`/`cancelDrag`** — o lado da plataforma. `pushPosition`
+  passa a mover o gesto em andamento, e so ele.
+
+### Por que arrastar nao cabia na fila de cliques
+
+Um clique e um EVENTO: aconteceu, tem uma posicao, acabou. Arrastar e um CICLO
+DE VIDA com duas pontas que carregam posicoes DIFERENTES — a origem diz O QUE se
+pega, o destino diz PARA ONDE vai — e um meio em que o jogo precisa desenhar o
+que esta na mao.
+
+E o MESMO aperto abre as duas leituras: a plataforma empurra um clique E comeca
+um arrasto. **Nao da para saber qual dos dois o jogador quis ate ele soltar.**
+
+### Por que agora, e nao antes
+
+O vocabulario nasceu LOCAL no casco (common 0.10.0, Klondike) e ficou la ate o
+segundo consumidor aparecer. Ele apareceu no **cue, degrau 06** (a tacada por
+arrasto), usou as duas leituras para o que elas foram feitas, leu os quatro
+campos de cada uma e **nao pediu nenhuma mudanca de API**.
+
+E o mesmo caminho da task 27 (o mouse), e a terceira porta de input com o par
+estado+edge: teclado (`isHeld`/`readKey`, 0.8.0), ponteiro (`x`,`y`/`readClick`,
+0.14.0), arrastar (`drag`/`readDrop`, 0.15.0).
+
+### O que NAO subiu
+
+**O `SetCapture`.** Sem capturar o ponteiro no aperto, soltar o botao fora da
+janela nao gera `WM_LBUTTONUP` e o gesto fica pendurado — mas isso e Win32, e o
+WndProc E o casco. O que subiu foi o `cancelDrag()`, que e a resposta em
+vocabulario de porta ao que o casco descobre em vocabulario de janela.
+
+**A folga de "isto foi um clique ou um arrasto?".** Ela e politica do JOGO, e o
+segundo consumidor provou por que: o Klondike usa 8 pixels para uma carta de 90,
+o cue usa 12 para uma bola de 20, e os dois medem perguntas diferentes.
+
+**O instante em que o gesto comecou.** O cue notou a falta, mediu o caso e
+decidiu nao pedir: e informacao que o proprio jogo tem, com um `bool`.
+
+## [0.14.0] - 2026-07-30
+
+*(Entrada escrita em retrospecto na 0.15.0: a versao foi lancada e etiquetada
+sem passar por aqui. Mesmo tipo de buraco de registro que a task 07 do common e
+as tasks 26/27 desta engine — e achado do mesmo jeito, procurando o vizinho para
+atualiza-lo.)*
+
+As duas extracoes do **Tactics** (10o jogo), que fecharam a revisao dele sem
+divida.
+
+### Added
+
+- **`cengine::grid2d`** (task 26) — a conversao entre pixel e celula, nos dois
+  sentidos.
+- **`cengine::input::Mouse`** (task 27) — a porta de ponteiro: posicao (estado)
+  e clique (edge), irma da porta de teclado da task 20. O `MouseClick` carrega a
+  posicao DO MOMENTO em que aconteceu, e nao a de agora.
+
+O casco (`platform-theforge-common` 0.9.0) passou a delegar, com
+`forgeui::MouseClick` como alias — nenhum jogo mudou uma linha.
+
 ## [0.13.0] - 2026-07-28
 
 A janela ganha voz para encerrar o loop: **`IWindowManager::shouldClose()`**.
