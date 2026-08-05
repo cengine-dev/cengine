@@ -14,7 +14,7 @@ deles sozinho responde "onde estamos".
 > mesma revisao**, senao um deles vira mentira silenciosa. Este `.md` e a
 > fonte legivel no terminal e no diff; o `.html` e a vista para olhar.
 
-**Ultima atualizacao:** 2026-07-31, apos a revisao do **Counter** (12o jogo).
+**Ultima atualizacao:** 2026-08-03, apos a revisao do **Cue** (13o jogo).
 
 ---
 
@@ -22,11 +22,11 @@ deles sozinho responde "onde estamos".
 
 | repo | papel | estado |
 |---|---|---|
-| `cengine` | a engine | 27 tasks, 7 modulos, 17 releases, 3 ADRs |
-| `platform-theforge-common` | casco Windows/The-Forge | 7 tasks, todas done, 12 releases |
+| `cengine` | a engine | 28 tasks, 7 modulos, 18 releases, 3 ADRs |
+| `platform-theforge-common` | casco Windows/The-Forge | 8 tasks, todas done, 13 releases |
 | `The-Forge` | dependencia externa (D3D12) | vendorizada |
 | `creative-lab` | orquestrador criativo (arte 2d, audio, 3d) | ex-`2d-art-lab`; nucleo neutro + pack `2d-art`; usado 1x (menu do Star Force) |
-| 12 jogos | consumidores de validacao | 182 commits somados |
+| 13 jogos | consumidores de validacao | 191 commits somados |
 
 ## Os jogos
 
@@ -44,6 +44,7 @@ deles sozinho responde "onde estamos".
 | 10 | tactics | 11 | 07-30 | 0.14.0 | 4 (65 casos) | **iniciativa e orcamento de acao**; jogo so de PONTEIRO; 1o pathfinding |
 | 11 | klondike | 10 | 07-31 | 0.14.0 | 4 (40 casos) | **o ARRASTAR**; informacao ESCONDIDA; o 1o UNDO do ecossistema |
 | 12 | counter | 10 | 07-31 | 0.14.0 | 5 (71 casos) | **consequencia ATRASADA**; persistencia de PARTIDA; os tres leitores |
+| 13 | cue | 9 | 08-03 | 0.15.0 | 6 (75 casos) | **a RESPOSTA de colisao** (MTV pela normal); o jogador que so ASSISTE |
 
 O 8puzzle tem 52 commits porque apanhou junto com a engine nascendo. Do
 terceiro em diante o custo estabiliza em ~11-16 commits por jogo — e isso e a
@@ -66,18 +67,25 @@ O Counter tambem custou 10, com o dominio mais denso desde o Tactics (71 casos)
 — e foi o primeiro jogo escolhido por uma DIVIDA precisa. **Ele a pagou
 corrigindo a pergunta**, o que vale mais que o codigo que teria produzido.
 
+**O Cue e o mais barato desde o Bulwark (9 commits)** e tem o dominio mais denso
+do ecossistema (75 casos). Foi o primeiro escolhido por um EIXO em vez de uma
+divida — e a licao dele e que **o eixo estava errado** (ver "O que esta aberto").
+Custou pouco porque a promocao que ele carregava ja estava desenhada por escrito
+antes da primeira linha, e porque nao improvisou: a forma obvia que erra foi
+nomeada no plano e apareceu ja no segundo degrau.
+
 ## A engine, por natureza de task
 
 | faixa | natureza | done | abertas |
 |---|---|---|---|
 | 01-09 | higiene e estrutura interna | 9 | 0 |
 | 10-16 | arquitetura do loop e do routing | 7 | 0 |
-| **17-27** | **candidatas vindas dos jogos** | **10** | **2** |
+| **17-28** | **candidatas vindas dos jogos** | **11** | **2** |
 
-A ultima linha e a que importa para julgar o filtro de promocao: **das 11
-candidatas nascidas em jogos, 10 subiram** — e as duas que restam nao esperam
-mais consumidor: esperam DESENHO (18) e um caso que quatro jogos com colisao
-nao produziram (22).
+A ultima linha e a que importa para julgar o filtro de promocao: **das 12
+candidatas nascidas em jogos, 11 subiram** — e as duas que restam nao esperam
+mais consumidor: a 18 espera DESENHO, e a 22 acabou de ser **redesenhada** pelo
+Cue (uma metade fechou em negativo, a outra tem API pronta e 1/2).
 
 ## Quem pariu cada modulo
 
@@ -93,6 +101,8 @@ nao produziram (22).
 0.14.0  grid2d                 <- delve (ida) + bulwark e tactics (ida e volta)
 0.14.0  input/Mouse            <- bulwark + tactics  (o 2o nao pediu mudanca
                                   nenhuma na API do 1o — o sinal mais forte)
+0.15.0  input/Mouse: drag      <- klondike + cue  (o mesmo sinal, de novo: as
+                                  duas leituras, os quatro campos, zero pedidos)
 0.12.0  anim: loop/finished    <- starforce + bulwark
 0.13.0  IWindowManager::       <- o X da janela: buraco de CONTRATO, achado
         shouldClose()             jogando o bulwark, valia para os 9 jogos
@@ -101,7 +111,9 @@ nao produziram (22).
 No casco: `ForgeUi`, `ForgeLineUi`, `ForgeSpriteUi` (0.1-0.4), depois
 `forgeaudio` e `Write-Dds` (0.5.0, validados pelo zelda), o **mouse** (0.6.0)
 e o `Paint.ps1` (0.7.0, extraido de 5 copias a mao) — os dois do bulwark. Na
-0.9.0 o mouse SAIU daqui para a engine, e a ponte voltou a so capturar.
+0.9.0 o mouse SAIU daqui para a engine, e na 0.12.0 o ARRASTAR fez o mesmo
+caminho: a ponte voltou a so capturar, e nenhum jogo mudou uma linha nas duas
+vezes.
 
 **Nenhum modulo subiu com menos de dois jogos.** Varios subiram porque o
 codigo ja era literalmente igual nos dois — a duplicacao apareceu sozinha e
@@ -127,13 +139,28 @@ duas candidatas NOVAS, essas sim: uma evidencia cada.
   pilha). "Sob o ponto" nao e uma pergunta unica: depende do PAPEL, que e
   vocabulario do jogo. A metade da POSICAO fechou com a task 27 (0.14.0);
   restam a cascata, o input-puxado, e agora o papel.
-- **22 (resolucao de colisao / MTV)** — 2/2 para eixo-separado, 0 para
-  penetracao/MTV. Cinco jogos com colisao nao produziram o caso.
+- **22 (resolucao de colisao / MTV)** — **REDESENHADA pelo Cue (2026-08-03):
+  a task estava MAL FORMULADA.** Ela era tratada como "2/2 para eixo-separado, 0
+  para MTV", como se fossem duas estrategias concorrentes para o mesmo contato. O
+  Cue usa **as duas, no mesmo passo, e as duas estao certas** — contra tabelas
+  resolve eixo a eixo (duas restricoes independentes, normais que SAO os eixos);
+  entre bolas, pela normal (uma normal so, quase nunca um eixo).
 
-**Uma candidata esperando o SEGUNDO consumidor:** o **vocabulario de DRAG**
-(`drag()` estado + `readDrop()` edge, hoje local no `forgeui`, no mesmo caminho
-que o mouse percorreu). A outra que estava aqui — a **mascara ASCII** — SUBIU:
-virou o `Paint-Mask` do common 0.11.0, com o Counter como segundo consumidor.
+  > **O erro nunca foi usar os eixos: foi usa-los quando a normal nao e um
+  > deles.** Nao ha escolha de estrategia a fazer — a GEOMETRIA decide.
+
+  Ela vira duas. A **22b** (penetracao AABB) fecha em NEGATIVO: mario e zelda nao
+  querem MTV e nunca quiseram. A **22a** (`contact()` para circulos) fica **1/2,
+  com API desenhada** — e o recorte mudou de nome: o que falta nao e "resolucao"
+  (que e politica), e sim **deteccao que devolve o suficiente para o jogo
+  responder**. O `intersects(Circle, Circle)` calcula o vetor entre os centros e
+  a distancia **e joga os dois fora** para devolver `bool`.
+
+**Uma candidata esperando o SEGUNDO consumidor:** nenhuma. As duas que estavam
+aqui SUBIRAM: a **mascara ASCII** virou o `Paint-Mask` (common 0.11.0, com o
+Counter), e o **vocabulario de DRAG** virou a task 28 (cengine 0.15.0 + common
+0.12.0, com o Cue). As duas pelo mesmo caminho, e nenhuma com uma segunda copia
+manual pelo meio.
 
 ## O que foi levantado e MORTO, com argumento
 
@@ -156,8 +183,10 @@ virou o `Paint-Mask` do common 0.11.0, com o Counter como segundo consumidor.
   implementacoes, tres recusas. **O achado vale mais que o veto:** mundo
   continuo nao precisa de tween porque ja E tween — quem precisaria sao os jogos
   DISCRETOS, onde o estado da SALTOS. Logo, interpolacao e **a primeira coisa da
-  metade de MUNDO que um jogo discreto pediria**, e e por isso que ela nunca
-  apareceu: essa metade foi construida por jogos continuos.
+  metade de MUNDO que um jogo discreto pediria**. **O Cue confirmou a previsao
+  pelo lado apontado** (2026-08-03): o jogo mais continuo do ecossistema nao tem
+  uma linha de tween. Zero implementacoes, QUATRO recusas — e registrar uma
+  previsao que se confirma vale tanto quanto registrar uma promocao.
 - **Undo por snapshot** (revisao do Klondike): o `Game` e mesa +
   `std::vector<Table>`. Morre por dois motivos, e o primeiro ja era lei da casa
   — *se nao da para descrever a candidata sem citar `std::vector`, e biblioteca
@@ -249,6 +278,25 @@ melhor que contagem (**o 2o consumidor nao pediu nenhuma mudanca de API**); e a
 18 nao subiu porque duas copias que DIVERGEM sao sinal de problema maduro e
 solucao imatura. Um filtro que so soubesse contar teria promovido as tres.
 
+**E o Cue corrigiu uma expectativa do proprio metodo** (2026-08-03). A revisao do
+Counter tinha diagnosticado que a metade de MUNDO da engine (`collision2d`,
+`camera2d`, `anim`, `grid2d`) dormia porque os tres ultimos jogos eram DISCRETOS,
+e escolheu um jogo CONTINUO para acorda-la.
+
+O jogo mais continuo que este ecossistema ja teve linkou **zero** dos quatro
+modulos — e so UM foi rejeicao (`collision2d`, que responde em `bool`). Os outros
+tres nao se aplicam: a mesa cabe na tela, uma bola nao tem quadros, e sinuca e o
+oposto de uma grade.
+
+> **"Continuo" nunca foi o eixo certo para prever o uso da metade de mundo.** As
+> perguntas que predizem sao outras tres — *o mundo e maior que a tela? as coisas
+> tem quadros? o espaco e discreto?* — e nenhuma tem a ver com continuo ou
+> discreto.
+
+Vale como licao de metodo, e nao so de engine: **uma previsao errada que se
+descobre e mais barata que uma que nao se testa.** O eixo estava errado; o jogo
+foi certo assim mesmo, porque foi ele que descobriu o erro.
+
 O ponto cego conhecido: o metodo e enviesado para EXTRACAO, e por isso
 estruturalmente cego para abstracao que so paga se desenhada antes de existir
 (uma pilha de cenas e desse tipo). O contrapeso e a formula **"o proximo jogo
@@ -333,12 +381,27 @@ abstracao errada).
 Nao e lacuna de nenhum lado — e previsao de onde as proximas candidatas devem
 aparecer.
 
-**O counter explicou POR QUE**, e a explicacao e melhor que a observacao: a
-metade de mundo foi construida por jogos CONTINUOS, e os tres ultimos sao
+**O counter explicou POR QUE**, e a explicacao parecia melhor que a observacao: a
+metade de mundo foi construida por jogos CONTINUOS, e os tres ultimos eram
 DISCRETOS. Foi tentando animar uma fila que isso ficou visivel — o que aquele
-jogo queria era INTERPOLACAO, e o `anim` da engine e clipe de quadros. **Nao e
-que a metade de mundo esteja velha: e que ela responde a uma pergunta que jogos
-discretos nao fazem.**
+jogo queria era INTERPOLACAO, e o `anim` da engine e clipe de quadros.
+
+**E o Cue mostrou que a explicacao estava errada** (2026-08-03). Ele e o jogo
+mais continuo do ecossistema e linkou **zero** dos quatro modulos, com so UMA
+rejeicao de verdade. A metade de mundo nao responde "a uma pergunta que jogos
+discretos nao fazem" — ela responde a **tres perguntas independentes**, e nenhuma
+delas e sobre ser continuo:
+
+| pergunta | modulo | ultimo jogo que a fez |
+|---|---|---|
+| o mundo e maior que a tela? | `camera2d` | zelda (6o) |
+| as coisas tem quadros? | `anim` | zelda (6o) |
+| o espaco e discreto? | `grid2d` | tactics (10o) |
+| dois corpos se tocam? | `collision2d` | starforce (7o) |
+
+Sete jogos sem as duas primeiras. **O 14o jogo com mundo maior que a tela e
+personagens animados acorda as duas de uma vez** — e, se tiver colisao circular,
+fecha a 22a de quebra.
 
 ## Referencias
 

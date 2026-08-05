@@ -1,10 +1,14 @@
-# 22 - Colisao 2D: resolucao posicional (recorte a decidir)
+# 22 - Colisao 2D: resolucao posicional (RECORTE DECIDIDO — dividir)
 
-- **Status:** estacionada para recorte - reavaliada em 2026-07-18 com o Zelda.
-  Agora existem **2 de 2 evidencias** de resolucao posicional eixo-separada
-  (mario-bros + zelda), mas **nenhum** dos dois consome penetracao/MTV. A
-  evidencia nova dispara a comparacao do mecanismo; nao autoriza implementar a
-  API original desta task. Ver "Reavaliacao com o Zelda".
+- **Status:** REDESENHADA em 2026-08-03, com o Cue (13o jogo). A task estava
+  **mal formulada**, e o primeiro consumidor real de MTV mostrou por que. Ela se
+  divide em duas, e as duas tem desfecho:
+  - **22a — `contact()` para CIRCULOS**: 1/2, com **API desenhada** e consumidor
+    real citavel. Espera o segundo;
+  - **22b — penetracao AABB / eixo-separado**: **FECHADA EM NEGATIVO**. Nao ha o
+    que extrair, e agora ha argumento em vez de espera.
+
+  Ver "O parecer do Cue" no fim.
 - **Prioridade:** baixa/media - comparar as duas implementacoes eixo-separadas
   e promover apenas um nucleo puro que ambas realmente consumiriam. Se esse
   nucleo nao existir sem carregar politica de tiles/movimento, a candidata deve
@@ -169,6 +173,107 @@ consumidores, mas codigo so sobe quando:
 - Deslizar de "medir penetracao" para "resolver colisao" e virar meio motor de
   fisica — fora do escopo do modulo de deteccao (ADR 0001/0002).
 
+## O parecer do Cue (2026-08-03) — a task estava MAL FORMULADA
+
+O Cue e um jogo de sinuca, e o **primeiro consumidor real de MTV** do
+ecossistema: duas bolas se tocando numa diagonal qualquer, dezenas de vezes por
+tacada. Ele foi escolhido, entre outras razoes, para destravar esta task.
+
+Nao destravou. **Invalidou a moldura dela**, em duas frentes.
+
+### 1. Os dois numeros nunca foram do mesmo problema
+
+Esta task tratava "eixo-separado" e "MTV" como duas ESTRATEGIAS concorrentes para
+o mesmo contato, e concluia — com razao — que escolher uma seria dar a engine uma
+opiniao.
+
+**O Cue usa as duas, no mesmo passo, e as duas estao certas.** Contra as tabelas
+da mesa, ele resolve eixo a eixo; entre bolas, resolve pela normal. E a diferenca
+esta provada por teste (`cue`, `CushionsTest.TheOrderOfTheAxesDoesNotChange` +
+`ImpactsTest.TheStruckBallLeavesAlongTheNormal`):
+
+- **duas paredes perpendiculares SAO duas restricoes independentes**, e as
+  normais delas SAO os eixos — resolver X nao muda nada do que Y decide, e a
+  ordem entre eles nao altera o resultado;
+- **dois circulos tem UMA normal**, e ela quase nunca e um eixo — separar por
+  eixo faria a resposta depender de qual eixo veio primeiro.
+
+> **O erro nunca foi usar os eixos: foi usa-los quando a normal nao e um deles.**
+
+Isso dissolve a duvida que segurava a task: **nao ha escolha de estrategia a
+fazer.** A GEOMETRIA decide. Os 2/2 do mario e do zelda e o 1 do cue sao
+evidencias de coisas diferentes, e somar ou opor os dois numeros nunca fez
+sentido.
+
+### 2. O que falta nao e "resolucao" — e DETECCAO QUE DEVOLVE O SUFICIENTE
+
+O `collision2d` responde a primeira pergunta do Cue desde a 0.7.0:
+
+```cpp
+[[nodiscard]] bool intersects(const Circle& a, const Circle& b);
+```
+
+E o `bool` **nao serve**. Para separar dois circulos e preciso o VETOR entre os
+centros e a PROFUNDIDADE — que e exatamente o que a deteccao **ja calculou e
+jogou fora**. Chamar o modulo significaria montar dois `Circle`, receber um
+`bool` e refazer a conta inteira.
+
+Por isso o Cue, escolhido para exercitar a metade de mundo da engine, **nao
+linkou o `collision2d`**. Nao por disciplina: por inutilidade.
+
+> Esta task nao e "resolucao de colisao" (que e politica, como ela mesma ja
+> tinha concluido). E **deteccao que devolve o suficiente para o jogo
+> responder** — mecanismo puro, sem uma opiniao sequer sobre o que fazer com a
+> resposta.
+
+### 22a — o recorte que agora tem FORMA
+
+Com um consumidor real, da para escrever em vez de imaginar:
+
+```cpp
+namespace cengine::collision2d {
+
+struct Contact
+{
+    bool  touching = false;
+    Vec2  normal   = {};   ///< unitario, de `a` para `b`
+    float depth    = 0.0f; ///< quanto se penetram
+};
+
+[[nodiscard]] Contact contact(const Circle& a, const Circle& b);
+
+}
+```
+
+Ela **nao resolve nada**: nao move, nao escolhe estrategia, nao troca impulso,
+nao decide o que o contato significa — tudo isso fica no jogo. E e testavel
+dentro da engine, sem jogo e sem GPU.
+
+**Evidencia 1/2:** cue, `src/cue/domain/Impacts.cpp` (a normal e a profundidade
+calculadas a mao, e usadas para o vetor minimo de translacao + troca de impulso).
+
+**E mesmo assim nao sobe agora**, pelo motivo de sempre: um consumidor. **O
+proximo jogo com colisao circular EXTRAI, nao copia** — a formula que fechou o
+`forgeaudio`, o `Write-Dds`, o `Paint-Mask` e o drag.
+
+Uma pergunta que volta junto quando ela subir: o `Vec2` deste modulo declara por
+escrito nao ser algebra linear ("nem um operador sequer"), e o Cue escreveu o
+proprio vetor por causa disso. Se a `contact()` subir, o provavel e que o vetor
+da ENGINE cresca — e nao que nasca um segundo.
+
+### 22b — penetracao AABB: FECHADA EM NEGATIVO
+
+Mario e zelda nao querem MTV, e nunca quiseram: os dois **ja sabem o eixo e o
+sentido do movimento do quadro**, e empurram pela face de entrada.
+
+O Cue confirma que eles estao certos, e isso e o que fecha a questao: contra
+normais que SAO os eixos, resolver por eixo nao e uma aproximacao conveniente —
+**e a resposta exata**. Nao ha o que extrair ali, e nao ha o que esperar.
+
+O que sobra dos dois jogos e a SEQUENCIA (mover X, resolver, mover Y, resolver),
+e ela e o loop de movimento do jogo, com grade de tiles, `grounded` e gravidade
+em volta. Politica, como esta task ja dizia na primeira avaliacao.
+
 ## Relacionado
 
 - Task 17 - deteccao AABB/circulo (a base deste modulo).
@@ -179,3 +284,6 @@ consumidores, mas codigo so sobe quando:
   eixo-separado; evidencia 2/2.
 - breakout, `World::reflectOff` - resolve reflexao (nao penetracao) no jogo;
   ilustra que "resolver contato" ja apareceu em duas formas DIFERENTES.
+- **cue, `src/cue/domain/Impacts.cpp` e `Cushions.cpp`** - o 1o consumidor real
+  de MTV, e o unico jogo que resolve das DUAS formas no mesmo passo. E o parecer
+  que redesenhou esta task (`cue/.ai/task/10-revisao-candidatas.md`).

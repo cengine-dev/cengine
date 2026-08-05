@@ -112,6 +112,7 @@ Ler antes de executar as tarefas de arquitetura:
 | 25 | [Clip de animação de sprite (frames sobre tempo)](25-sprite-animation-clip.md) | ✅ done (0.10.0 — `cengine::anim`: máquina clip+frame+acumulador; seleção/vocabulário ficam nos jogos; zelda valida, mario pinado 0.9.0; spaceinvaders segue sem linkar — opt-in) | Arquitetura |
 | 26 | [Grade em pixels: célula ↔ pixel](26-grid-pixel-mapping.md) ✅ 0.14.0 | 🟢 Baixa/Média (gate disparou quando a VOLTA chegou a 2: bulwark + tactics; delve é a 3ª evidência da ida) | Arquitetura |
 | 27 | [Mouse como porta de input](27-mouse-vocabulary-port.md) ✅ 0.14.0 | 🟡 Média (2/2 — e o 2º consumidor usou a forma do 1º SEM MUDAR NADA, que é o sinal mais forte deste filtro) | Arquitetura |
+| 28 | [Arrastar na porta de ponteiro](28-drag-vocabulary-port.md) ✅ 0.15.0 | 🟡 Média (2/2 — o MESMO sinal outra vez: as duas leituras, os quatro campos, zero pedidos de mudança) | Arquitetura |
 
 ## Candidatas e estado dos gates
 
@@ -162,11 +163,26 @@ Ver [ADR 0002](../decisions/0002-criterio-de-promocao-anti-deposito.md).
   irmão (`$(CengineRoot)core\src\...` no vcxproj), sem tag. Um breaking em
   `IScene` quebra o build de sete jogos. O gate agora espera um desenho que
   resolva as três metades juntas, não mais "um segundo consumidor".
-- **22 (resolução de colisão)** — **2/2 para o padrão eixo-separado**: mario e
-  zelda movem/resolvem X e depois Y. Isso dispara a comparação, mas não a API
-  de penetração/MTV originalmente imaginada, que segue com 0 consumidores. A
-  task permanece estacionada até identificar um núcleo puro que ambos usariam;
-  reflexão do breakout, `grounded`, one-way e dano continuam política.
+- **[22 (resolução de colisão)](22-collision2d-resolution.md)** —
+  **REDESENHADA pelo Cue (2026-08-03): a task estava MAL FORMULADA, e o 1º
+  consumidor real de MTV mostrou por quê.** Ela vira duas:
+  - **22a — `contact()` para CÍRCULOS: 1/2, com API DESENHADA.** O que falta não
+    é "resolução" (que é política, como a própria task já concluíra) — é
+    **detecção que devolve o suficiente para o jogo responder**. O
+    `intersects(Circle, Circle)` calcula o vetor entre os centros e a distância,
+    **e joga os dois fora** para devolver `bool`; separar exige exatamente eles.
+    Por isso o jogo escolhido para exercitar a metade de mundo **não linkou o
+    `collision2d`** — não por disciplina, por inutilidade. Evidência: cue,
+    `src/cue/domain/Impacts.cpp`. Espera o segundo, pela fórmula de sempre.
+  - **22b — penetração AABB / eixo-separado: FECHADA EM NEGATIVO.** Mario e zelda
+    não querem MTV e nunca quiseram — já sabem o eixo e o sentido do movimento.
+  E o argumento que fecha as duas, porque **dissolve a dúvida que segurava a
+  task**: os dois números nunca foram do mesmo problema. O Cue usa as DUAS formas
+  no mesmo passo e as duas estão certas — contra tabelas resolve eixo a eixo
+  (duas restrições independentes, normais que SÃO os eixos), entre bolas resolve
+  pela normal (uma normal só, quase nunca um eixo).
+  > **O erro nunca foi usar os eixos: foi usá-los quando a normal não é um
+  > deles.** Não há escolha de estratégia a fazer — a GEOMETRIA decide.
 - **23 (câmera/viewport)** — **GATE DISPARADO (2/2)**: mario e zelda usam a
   mesma transformada mundo→janela e o mesmo culling; o Zelda adiciona rolagem
   vertical sem mudar o mecanismo. A candidata está pronta para desenho da
@@ -638,6 +654,56 @@ por dias; o primeiro em dois jogos escolhido por uma DÍVIDA de verdade):
   candidatas mais antigas (a 22 e o resto da metade de mundo). Não é dívida; é o
   eixo com maior chance de produzir evidência, que é a pergunta certa quando não
   há dívida.
+
+Sweep de 2026-08-03 (Cue completo — décimo terceiro jogo, uma sinuca; escolhido
+por um EIXO, e não por uma dívida):
+
+- **Uma promoção, e ela estava PLANEJADA:** o vocabulário de DRAG subiu
+  (`cengine 0.15.0`, task 28; `common 0.12.0`), com o 2º consumidor usando as
+  duas leituras e os quatro campos de cada uma **sem pedir mudança de API**. A
+  fórmula "o próximo jogo EXTRAI, não copia" fechou o **quinto** ciclo completo.
+- **Precedente novo:** *quando o mecanismo tem um número de tolerância, o número
+  fica no consumidor* — Klondike usa 8 px (carta de 90, "errou o alvo?"), cue usa
+  12 (bola de 20, "quis mesmo tacar?"). Foi a **primeira vez que uma recusa a
+  opinar foi TESTADA** por um segundo caso, em vez de só declarada.
+- **A task 22 foi REDESENHADA, e não destravada.** Ver acima e o arquivo dela.
+  Em uma linha: *o erro nunca foi usar os eixos — foi usá-los quando a normal não
+  é um deles*. A 22a (`contact()` para círculos) fica 1/2 com API desenhada; a
+  22b (AABB) fecha em NEGATIVO.
+- **O achado que ninguém esperava: a metade de MUNDO nunca foi PERGUNTADA.** A
+  revisão do Counter escolheu este jogo para descobrir se ela envelheceu bem, e a
+  resposta é que a pergunta não pode ser respondida — o jogo mais contínuo do
+  ecossistema linkou **zero** dos quatro módulos dela, e só UM foi rejeição
+  (`collision2d`: responde em `bool`). Os outros três não se aplicam: a mesa cabe
+  na tela (`camera2d`), uma bola não tem quadros (`anim`), e sinuca é o oposto de
+  uma grade (`grid2d`).
+
+  > **"Contínuo" nunca foi o eixo certo para prever o uso da metade de mundo.**
+  > As perguntas que predizem são outras três: *o mundo é maior que a tela? as
+  > coisas têm quadros? o espaço é discreto?* — e nenhuma delas tem a ver com
+  > contínuo ou discreto.
+
+  Isso corrige a expectativa que escolheu este jogo. O eixo estava errado — mas o
+  jogo foi certo assim mesmo, porque foi ele que descobriu o erro.
+- **Interpolação: QUARTA recusa, e da direção prevista.** O Counter previu que
+  mundo contínuo não precisa de tween porque já É tween; o jogo mais contínuo de
+  todos confirmou, sem uma linha de interpolação no repositório. Registrar uma
+  previsão que se confirma vale tanto quanto registrar uma promoção (a mesma
+  lição do `Cooldown do som de tiro`). O gate segue: **um jogo DISCRETO que ANIME
+  a transição de estado.**
+- **A terceira fonte de som**, que o Counter não tinha: além do evento e do
+  retorno de chamada, a **BORDA de um estado** (a mesa que dormiu, a mesa limpa).
+  `settled()` e `finished()` são estados, e um estado consultado todo quadro
+  tocaria um som por quadro para sempre. Daí: **evento e estado não são a mesma
+  coisa vista de ângulos diferentes — quem lê estado é responsável por achar a
+  borda.**
+- **O achado do Klondike (hit-testing tem DIREÇÃO) segue com UM consumidor.**
+  Aqui o alvo é um círculo, e só um; não há sobreposição nem cascata. **Este jogo
+  não conta como segundo** — pelo mesmo motivo que o Counter não contou.
+- **A pergunta para o 14º jogo** não é mais "que eixo falta". Um jogo com **mundo
+  maior que a tela e personagens animados** exercitaria as duas metades que
+  dormem há sete jogos (`camera2d` e `anim`, últimas usadas no zelda, o 6º) — e,
+  se tiver colisão circular, fecha a 22a de quebra.
 
 ## Legenda de status
 
