@@ -1,8 +1,8 @@
-﻿cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.23)
 
-project(cengine VERSION 0.15.0 LANGUAGES CXX)
+project(cengine VERSION 0.17.0 LANGUAGES CXX)
 
-# Define padrÃ£o do projeto
+# Define padrão do projeto
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -11,7 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 enable_testing()
 
 # -------------------------------------------------------------
-# OpÃ§Ãµes de build (mÃ³dulos opt-in â€” ver ADR 0001)
+# Opções de build (módulos opt-in — ver ADR 0001)
 # -------------------------------------------------------------
 option(CENGINE_BUILD_ROUTING     "Build the optional routing module (cengine::routing)" ON)
 option(CENGINE_BUILD_COLLISION2D "Build the optional 2D collision detection module (cengine::collision2d)" ON)
@@ -20,10 +20,11 @@ option(CENGINE_BUILD_AUDIO       "Build the optional audio port module (cengine:
 option(CENGINE_BUILD_CAMERA2D    "Build the optional 2D camera mechanism module (cengine::camera2d)" ON)
 option(CENGINE_BUILD_ANIM       "Build the optional animation clip module (cengine::anim)" ON)
 option(CENGINE_BUILD_GRID2D      "Build the optional cell<->pixel grid module (cengine::grid2d)" ON)
+option(CENGINE_BUILD_CAMERA3D    "Build the optional 3D camera mechanism module (cengine::camera3d)" ON)
 option(CENGINE_BUILD_TESTS       "Build the test suite" ON)
 
 # -------------------------------------------------------------
-# Core (sempre) + mÃ³dulos opcionais
+# Core (sempre) + módulos opcionais
 # -------------------------------------------------------------
 add_subdirectory(core)
 
@@ -53,6 +54,10 @@ endif()
 
 if(CENGINE_BUILD_GRID2D)
     add_subdirectory(modules/grid2d)
+endif()
+
+if(CENGINE_BUILD_CAMERA3D)
+    add_subdirectory(modules/camera3d)
 endif()
 
 if(CENGINE_BUILD_TESTS)

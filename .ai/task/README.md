@@ -705,6 +705,48 @@ por um EIXO, e não por uma dívida):
   dormem há sete jogos (`camera2d` e `anim`, últimas usadas no zelda, o 6º) — e,
   se tiver colisão circular, fecha a 22a de quebra.
 
+## Ciclo 0.16.0 — a terceira dimensão (task 29) — **ENTREGUE 2026-09-06**
+
+Aberto pelo lab **`diorama`**, que existe para quebrar o teto que o **Vigil**
+mediu ao fechar o degrau 24. A divisão de trabalho segue os ADRs 0001 e 0002, e
+vale a pena declará-la em voz alta porque a tentação é grande:
+
+| o que | onde | por quê |
+|---|---|---|
+| depth buffer, malha na GPU, shader com SRT, material, textura, skinning | **casco** (`platform-theforge-common`, tasks 09-14) | ADR 0001: *a cengine não escolhe biblioteca gráfica* |
+| view/projection/unproject, o giro da câmera | **cengine** (task 29, `camera3d`) | mecanismo puro, testável sem GPU, com dois consumidores |
+| a cena, os assets, a conferência contra o Blender | **`diorama`** | é o consumidor |
+
+> **A cengine não vira uma engine 3D — ela ganha a terceira dimensão na metade
+> de MUNDO.** O que "suporta jogos 3D" significa aqui é o par: engine com o
+> vocabulário de mundo em três eixos, casco com o pipeline. Empurrar o pipeline
+> para dentro da engine exigiria revisar o ADR 0001 por escrito, e a
+> contrapartida seria perder a propriedade que ela nunca perdeu em 15 releases.
+
+A task 29 nasce com **extração autorizada** pela fórmula *"o próximo consumidor
+extrai, não copia"* — o mesmo caminho do bulwark, e das cinco promoções que ela
+já produziu. Evidência 1/2 escrita à mão no Vigil (`app/Camera.h` +
+`ForgeMalha.h`); o `diorama` é o 2º, no degrau 05, e paga o pedágio da Emenda 1
+do ADR 0002 (a suíte encarna o caso do consumidor congelado).
+
+### Fechado: `cengine::camera3d` na 0.16.0
+
+`Orbit` + `eye`/`view`/`orthographic`/`perspective`/`multiply`/`unproject`,
+módulo opt-in (`CENGINE_BUILD_CAMERA3D`), sem dependência de outro módulo.
+**15 testes, nenhum abre janela**; suíte completa em 167, todos passando.
+
+Quatro deles são o pedágio da Emenda 1 — transcrevem os números do
+`vigil/src/vigil/app/Camera.h` com a origem citada (o achatamento 2:1 em 30
+graus, o retângulo alinhado sem giro, o losango com giro de 45, a câmera a prumo
+que não achata nada).
+
+**A entrega trouxe uma decisão que o esboço não tinha: a CONVENÇÃO.** Mundo +Y
+para cima e **destro** (glTF), vista olhando -Z, profundidade de recorte em
+[0,1]. Matriz canhota sobre malha destra desenha a cena **espelhada** — e
+espelhado continua parecendo certo até haver com o que comparar. Há um teste só
+para isso, e o consumidor 2 já tinha o sintoma sem saber: ele precisava de
+`FRONT_FACE_CW` no descarte de face, que era a cena espelhada se anunciando.
+
 ## Legenda de status
 
 Marque no topo de cada arquivo conforme avança:

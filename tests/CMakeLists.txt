@@ -20,6 +20,17 @@ add_executable(cengine_tests
     "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/EngineManagerTest.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/integration/EngineManagerIntegrationTest.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/VersionTest.cpp"
+)
+
+# A versao anunciada e a raiz do repo, para o VersionTest conferir o CHANGELOG
+# contra o que o build carrega. Vem do CMake porque o teste NAO deve adivinhar
+# onde o repositorio esta — caminho adivinhado que nao resolve viraria "o teste
+# pulou", que e o oposto do que ele existe para fazer (mesma disciplina do
+# DIORAMA_RAIZ no lab).
+target_compile_definitions(cengine_tests PRIVATE
+    CENGINE_VERSION="${cengine_VERSION}"
+    CENGINE_RAIZ="${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
 target_link_libraries(cengine_tests
@@ -89,6 +100,17 @@ if(CENGINE_BUILD_CAMERA2D)
     "${CMAKE_CURRENT_SOURCE_DIR}/camera2d/ViewportTest.cpp"
   )
   target_link_libraries(cengine_tests PRIVATE cengine::camera2d)
+endif()
+
+# -------------------------------------------------------------
+# 3e-bis. Testes do módulo camera3d — só quando o módulo está habilitado
+# -------------------------------------------------------------
+if(CENGINE_BUILD_CAMERA3D)
+  target_sources(cengine_tests
+    PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/camera3d/CameraTest.cpp"
+  )
+  target_link_libraries(cengine_tests PRIVATE cengine::camera3d)
 endif()
 
 # -------------------------------------------------------------

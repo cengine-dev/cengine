@@ -5,6 +5,145 @@ All notable changes to CEngine are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-09-07
+
+**Correcoes de uma revisao arquitetural**, todas com o teste que as prova. Nao ha
+API nova nem funcionalidade: o que muda e que sete comportamentos que falhavam em
+silencio passaram a falhar alto — ou a nao falhar.
+
+> **Nao e breaking para nenhum consumidor com entrada valida.** Todas as mudancas
+> de comportamento estao em caminhos que antes eram indefinidos (dereferencia de
+> nulo), plausiveis e errados (a mira atras da camera, o giro perdido no polo) ou
+> `inf` (as projecoes degeneradas). O que ja funcionava continua byte por byte —
+> os 167 testes anteriores passam sem uma linha alterada.
+
+### Fixed
+
+- **`camera3d::unproject` devolvia `true` para um ponto ATRAS da camera.** O `t`
+  da interseccao raio-plano nunca era testado: mirar acima do horizonte em
+  perspectiva, ou pedir um `planeY` mais alto do que o olho, devolvia um ponto que
+  existe, esta no plano pedido, e fica do lado de la de quem clicou. O cabecalho
+  ja prometia `false` "quando o raio nao encontra o plano" — a promessa cobria
+  dois dos tres casos.
+
+- **A camera A PRUMO ignorava o `yaw`.** Com `pitch = ±pi/2` a base da vista
+  degenera, e o codigo caia numa constante. A 89,99 graus a imagem dependia do
+  giro; a 90 ela SALTAVA para uma orientacao fixa. O limite existe e vale
+  `(cos yaw, 0, -sin yaw)` — e agora e ele que entra. O comentario de la afirmava
+  exatamente o que o codigo nao fazia.
+
+- **`camera3d::orthographic`/`perspective` emitiam `inf`.** So o `aspect` tinha
+  guarda, e a saida dele era um valor PLAUSIVEL; `halfWidth = 0`, `near == far` e
+  um `fovY` fora de `(0, pi)` nao tinham nenhuma. Entrada degenerada agora devolve
+  a **matriz zerada** (`degenerada()` responde se e o caso): ela leva todo vertice
+  a `w = 0` e nada desenha. Tela vazia manda procurar a camera; enquadramento
+  estranho nao manda procurar nada.
+
+- **`RouterInMemory`, `GameManager` e `SceneRepository` nao validavam nulo**,
+  enquanto `EngineManager` e `FlowRouter` sempre validaram. Repositorio nulo,
+  estado inicial nulo, `requestState(nullptr)`, factory vazia e factory que
+  DEVOLVE nulo agora sao `std::invalid_argument`/`std::runtime_error` no ponto em
+  que o erro foi cometido. O ultimo caso era `*(it->second)` num ponteiro nulo:
+  comportamento indefinido no ponto mais quente do laco.
+
+- **`SceneStack` entregava o quadro a quem ja tinha saido.** `update`/`draw`
+  copiam a pilha antes de iterar (para uma camada poder empilhar/desempilhar
+  durante a propria chamada), e a copia fazia a camada removida no meio do laco —
+  que ja recebeu `onExit()` — ainda receber `update()` depois. Cena morta
+  continuando a simular.
+
+### Added
+
+- **`input::Keyboard::dropped()` e `input::Mouse::dropped()`** — quantos eventos a
+  porta ja jogou fora por fila cheia. O teto sempre existiu; o NUMERO nao. Sem
+  ele, o jogador aperta, nada acontece, e a conclusao possivel e "travou". E o
+  mesmo remedio que os batchers do casco ja tinham (`Stats::dropped`) — *o que
+  some sem erro visivel e o pior jeito de errar* —, aplicado ao lado de ca.
+  Acumulado, e nao por quadro: a pergunta e "esta acontecendo?", e ela nao pode
+  depender de alguem olhar no quadro certo.
+
+- **`camera3d::degenerada(Mat4)`** — a projecao recusou a entrada? Existe para o
+  consumidor poder perguntar, ja que a assinatura nao tem canal de erro. (Nao ha
+  `bool` de retorno nas projecoes porque nao ha, hoje, consumidor que saiba o que
+  fazer com a recusa; o dia em que houver, a assinatura muda com ele.)
+
+- **`VersionTest`** — o `CHANGELOG.md` e o `CMakeLists.txt` anunciam a mesma
+  versao. Ele nasce porque os dois JA tinham divergido: o CMake dizia `0.15.0`
+  com a 0.16.0 escrita aqui em cima. Ninguem percebeu porque nada lia os dois.
+  Mesma disciplina do `RigDoBlenderTest` do `diorama`: *transcricao sem quem a
+  confira e deriva esperando acontecer*.
+
+### Changed
+
+- **`CMakeLists.txt` da raiz** reescrito em UTF-8 sem BOM. Ele estava com o texto
+  duplo-codificado (`# OpÃ§Ãµes de build`) — os outros CMakeLists do repo sempre
+  estiveram corretos.
+
+### Suite
+
+167 -> 190 testes. Os 23 novos foram conferidos contra o codigo ANTERIOR: os que
+descrevem mudanca de comportamento **falham** la (7 no `camera3d`, 7 no
+`routing`), e os 167 antigos passam nos dois lados.
+
+## [0.16.0] - 2026-09-06
+
+A **terceira dimensao**, e so na metade de MUNDO: `cengine::camera3d` (task 29)
+— matrizes de vista/projecao e a mira inversa.
+
+> **Nao e breaking.** Modulo novo, opt-in (`CENGINE_BUILD_CAMERA3D`), sem
+> dependencia de outro modulo. Nenhum jogo mudou uma linha.
+>
+> **E a engine NAO virou 3D.** O pipeline (depth buffer, malha na GPU, shader
+> com SRT, material, skinning) vive no casco `platform-theforge-common`, e a
+> fronteira e a do ADR 0001: a cengine nao escolhe biblioteca grafica. O que
+> sobe aqui e o que se testa sem abrir janela.
+
+### Added
+
+- **`Orbit`** — a camera em orbita: alvo, distancia, `yaw` (giro em torno do
+  vertical) e `pitch` (elevacao **a partir do chao**). A forma minima que o
+  `vigil` descobriu ser suficiente — e ele descobriu porque o `yaw` FALTOU: o
+  relato foi *"o tablado nao tem profundidade, parece nao estar inclinado"*, e
+  sem giro um quadrado do chao projeta num retangulo alinhado, indistinguivel
+  de 2D chapado.
+- **`eye`, `view`, `orthographic`, `perspective`, `multiply`** — as matrizes,
+  em coluna-maior (o consumidor faz `memcpy` para o constant buffer sem
+  transpor, que e onde se erra).
+- **`unproject`** — a mira: um pixel vira ponto do mundo, num plano horizontal.
+  Exata na ortografica, porque projecao afim se inverte com conta fechada.
+  Devolve `false` quando o raio nao encontra o plano; **inventar um alvo seria
+  pior do que dizer que nao ha**.
+
+### A convencao, que e a parte que morde
+
+| | |
+|---|---|
+| mundo | +Y para cima, **destro** (a convencao do glTF) |
+| vista | a camera olha para -Z |
+| recorte | X/Y em [-1,1]; **profundidade Z em [0,1]** (D3D12/Vulkan/Metal) |
+
+**Destro, e nao canhoto**: o dado deste ecossistema vem de glTF, que e destro.
+Matriz canhota sobre malha destra desenha a cena **espelhada** — e espelhado
+continua parecendo certo ate haver com o que comparar. Ha um teste so para isso
+(`ACenaNaoSaiESPELHADA`).
+
+### Proveniencia (ADR 0002)
+
+- **Consumidor 1 — `vigil` @ `e35f67a`**, `src/vigil/app/Camera.h` mais a metade
+  de camera do `ForgeMalha.h`, escritos a mao. Consumidor **pausado**: pela
+  **Emenda 1** continua valendo, pagando o pedagio de a suite desta engine
+  ENCARNAR o caso de uso dele. Quatro testes transcrevem os numeros de la — o
+  achatamento 2:1 em 30 graus (`sin 30 = 0.5`), o retangulo alinhado sem giro, o
+  losango com giro de 45, e a camera a prumo que nao achata nada.
+- **Consumidor 2 — lab `diorama`, degrau 05.** Ele **extrai**, nao copia. O
+  teste `DioramaOOlhoBateComAPOSICAOQueOBlenderCALCULOU` compara o `eye()` com a
+  posicao que o Blender gravou em `art/referencia/orientacao.txt`.
+
+### O que NAO subiu, e nunca sobe
+
+**Para onde a camera olha.** Seguir um corpo, look-ahead, limites, suavizacao —
+FEEL de cada jogo. Mesmo corte da `camera2d` (task 23).
+
 ## [0.15.0] - 2026-08-03
 
 O ponteiro aprende a **ARRASTAR**: `DragState` + `Drop` na
