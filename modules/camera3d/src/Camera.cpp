@@ -57,9 +57,21 @@ Mat4 view(const Orbit& orbit)
 {
     const Vec3 origem = eye(orbit);
 
+    // **O olho EM CIMA do alvo nao tem vista**, e `distance = 0` e o jeito comum
+    // de chegar la. Sem esta guarda o `normalize` devolvia o vetor zero, o `u`
+    // saia zero atras dele, e a matriz saia SINGULAR sem ninguem saber -- a
+    // mesma falha calada que as projecoes acabaram de deixar de ter.
+    //
+    // Matriz zerada, pela mesma regra: `degenerada()` responde, e nada desenha.
+    const Vec3 paraOAlvo = sub(orbit.target, origem);
+    if (dot(paraOAlvo, paraOAlvo) <= 1e-12f)
+    {
+        return Mat4{};
+    }
+
     // Base DESTRA com a camera olhando para -Z: `f` aponta do olho para o alvo,
     // e a terceira coluna guarda `-f`.
-    const Vec3 f = normalize(sub(orbit.target, origem));
+    const Vec3 f = normalize(paraOAlvo);
 
     // O `up` de referencia e +Y. Camera a prumo (`pitch = +-pi/2`) deixa `f`
     // paralelo a ele e o produto vetorial degenera.

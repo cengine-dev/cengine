@@ -266,6 +266,16 @@ TEST(Camera3dTest, ACameraNaoSALTAAoChegarNoPolo)
 // as PROJECOES recusam entrada degenerada em vez de inventar uma camera
 // =============================================================================
 
+TEST(Camera3dTest, ACameraEmCIMADoAlvoNaoTemVISTA)
+{
+    // `distance = 0` poe o olho no alvo, e ai nao ha direcao para onde olhar. A
+    // base degenera, e a versao anterior devolvia uma matriz SINGULAR calada.
+    EXPECT_TRUE(degenerada(view(Orbit{ .target = { 1.0f, 2.0f, 3.0f }, .distance = 0.0f })));
+
+    // E o caso bom continua bom: a guarda nova nao pode ter comido a vizinhanca.
+    EXPECT_FALSE(degenerada(view(Orbit{ .target = { 1.0f, 2.0f, 3.0f }, .distance = 0.01f })));
+}
+
 TEST(Camera3dTest, OrtograficaRecusaEntradaDegenerada)
 {
     EXPECT_TRUE(degenerada(orthographic(0.0f, 1.0f, 0.1f, 50.0f)));   // largura zero
