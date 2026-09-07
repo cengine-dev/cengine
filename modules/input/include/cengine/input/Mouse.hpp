@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace cengine::input {
@@ -104,6 +105,12 @@ public:
     /// esta na fila chegou primeiro e sera consumido primeiro.
     static constexpr size_t kQueueMax = 16;
 
+    /// **Quantos gestos esta porta ja jogou fora**, desde sempre — cliques e
+    /// `Drop` somados. Irmao do `Keyboard::dropped()`, e pela mesma razao: um
+    /// clique que some sem aviso e lido como "o jogo ignorou", nunca como "a
+    /// fila encheu".
+    [[nodiscard]] uint32_t dropped() const { return m_dropped; }
+
     // --- lado da PLATAFORMA (quem captura) ---
 
     /// Onde o ponteiro esta. Um gesto em andamento acompanha: e o que permite a
@@ -146,8 +153,9 @@ private:
     std::vector<Drop>       m_drops;
     DragState               m_drag;
 
-    float m_x = 0.0f;
-    float m_y = 0.0f;
+    float    m_x = 0.0f;
+    float    m_y = 0.0f;
+    uint32_t m_dropped = 0;
 };
 
 } // namespace cengine::input

@@ -144,7 +144,11 @@ public:
 
     /// Libera recursos do jogo e da janela. Invocado ao final de `start()`;
     /// no modo hospedado é responsabilidade do host, no teardown dele.
-    void cleanup() const;
+    ///
+    /// Não é `const`: ele destrói recursos do jogo e da janela. Era, e compilava
+    /// só porque `unique_ptr` const dá acesso não-const ao apontado — uma brecha
+    /// da linguagem, não uma propriedade do método.
+    void cleanup();
 
 private:
     // Só as factories constroem: `owned()` garante janela não nula; `hosted()`

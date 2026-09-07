@@ -59,7 +59,7 @@ void EngineManager::start() {
     run();
 }
 
-void EngineManager::cleanup() const {
+void EngineManager::cleanup() {
     m_gameManager->cleanup();
 
     // A janela existe apenas no modo próprio; numa engine hosted() o

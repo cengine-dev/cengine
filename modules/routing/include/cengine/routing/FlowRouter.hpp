@@ -29,6 +29,17 @@ namespace cengine::routing {
  * };
  * @endcode
  *
+ * ## Quem POSSUI quem, e por que isto importa
+ *
+ * Este helper guarda um `shared_ptr<IRouter>`, e o router possui o repositório,
+ * que possui as cenas. **Uma cena que guarde este objeto por valor ou por
+ * `shared_ptr` fecha um CICLO** — router -> repositório -> cena -> router — e
+ * nada é destruído: um vazamento que nenhum teste de jogo veria, porque só
+ * aparece no fim do processo.
+ *
+ * O contrato, portanto: **a cena recebe o `FlowRouter` por REFERÊNCIA**, nunca
+ * por posse compartilhada. Ele vive no composition root, ao lado do router.
+ *
  * @tparam TFlow o tipo-base da máquina de fluxo do jogo (deriva de `IState`);
  *         as transições despacham sobre o estado ATUAL do router.
  */
@@ -66,6 +77,22 @@ public:
 
     /// Agenda a próxima cena (chamado pelas transições da máquina de fluxo);
     /// delega para `IRouter::requestState()` — efetivação em duas fases.
+    ///
+    /// **O `const` é DELIBERADO, e não um descuido.** Ele parece mentir (o
+    /// método navega, portanto muda o mundo), e a tentação de "limpar" é real —
+    /// mas ele é a peça que sustenta o desenho dos estados de fluxo:
+    ///
+    /// ```cpp
+    /// // asteroids/src/asteroids/game/state/StateGame.h
+    /// void menu(const GameRouter& game) const override;
+    /// ```
+    ///
+    /// Os estados são objetos SEM ESTADO, e recebem o router como
+    /// `const GameRouter&`. O `const` ali diz *"você pode pedir uma navegação;
+    /// não pode reconfigurar o roteador"* — e é essa a fronteira. Treze jogos do
+    /// ecossistema escrevem assim (asteroids, breakout, bulwark, counter, cue,
+    /// delve, fold, klondike, mario-bros, starforce, tactics, vigil, zelda);
+    /// tirar o `const` daqui quebra todos.
     void setNextState(std::unique_ptr<IState> state) const {
         m_router->requestState(std::move(state));
     }

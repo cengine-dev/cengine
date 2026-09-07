@@ -95,6 +95,10 @@ public:
     void input();
 
 private:
+    // A camada ainda esta na pilha? Usado por `update`/`draw` para nao entregar
+    // o quadro a quem saiu no meio do proprio laco.
+    [[nodiscard]] bool naPilha(const core::IScene* layer) const;
+
     struct Entry
     {
         Layer layer;

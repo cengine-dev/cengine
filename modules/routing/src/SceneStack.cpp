@@ -49,23 +49,54 @@ bool SceneStack::isTop(const core::IScene* layer) const
     return !m_layers.empty() && m_layers.back().layer.get() == layer;
 }
 
+bool SceneStack::naPilha(const core::IScene* layer) const
+{
+    for (const Entry& entry: m_layers)
+    {
+        if (entry.layer.get() == layer)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void SceneStack::update(const core::Seconds dt)
 {
     // De baixo para cima, TODAS: e o criterio 1 do gate 18 — a cena de baixo
-    // continua rodando atras do overlay. Copia porque uma camada pode
-    // empilhar ou desempilhar durante a propria chamada.
+    // continua rodando atras do overlay.
+    //
+    // A copia existe porque uma camada pode empilhar ou desempilhar durante a
+    // propria chamada, e iterar o vetor vivo invalidaria o iterador. Mas a copia
+    // sozinha CRIAVA UM DEFEITO: uma camada removida no meio do laco -- que ja
+    // recebeu `onExit()` -- ainda recebia `update()` depois, porque continuava
+    // na copia. Cena morta continuando a simular e a mesma familia de "corpo que
+    // some sem avisar", so que ao contrario.
+    //
+    // Por isso a confirmacao antes de cada chamada. A busca e linear e as pilhas
+    // deste ecossistema tem duas ou tres camadas.
     const std::vector<Entry> snapshot = m_layers;
     for (const Entry& entry: snapshot)
     {
+        if (!naPilha(entry.layer.get()))
+        {
+            continue; // saiu da pilha no meio deste mesmo laco
+        }
         entry.layer->update(dt);
     }
 }
 
 void SceneStack::draw()
 {
+    // Mesma regra do `update`: quem saiu no meio do quadro nao desenha depois de
+    // ter recebido `onExit()`.
     const std::vector<Entry> snapshot = m_layers;
     for (const Entry& entry: snapshot)
     {
+        if (!naPilha(entry.layer.get()))
+        {
+            continue;
+        }
         entry.layer->draw(); // ordem de desenho = ordem da pilha: o topo fica por cima
     }
 }

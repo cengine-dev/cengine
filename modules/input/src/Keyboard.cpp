@@ -6,7 +6,8 @@ void Keyboard::pushKey(const KeyEvent event)
 {
     if (m_queue.size() >= kQueueMax)
     {
-        return; // fila cheia: o evento novo cai (ver kQueueMax)
+        ++m_dropped; // fila cheia: o evento novo cai (ver kQueueMax) — e isso APARECE
+        return;
     }
 
     m_queue.push_back(event);

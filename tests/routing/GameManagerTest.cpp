@@ -7,6 +7,7 @@
 #include <cengine/core/IScene.hpp>
 #include <cengine/routing/GameManager.hpp>
 #include <cengine/routing/StateCodes.hpp>
+#include <stdexcept>
 
 #include <mock/MockRouter.hpp>
 #include <mock/MockScene.hpp>
@@ -124,4 +125,9 @@ TEST_F(GameManagerTest, ShouldExit_WhenStateIsNotExit_ReturnsFalse) {
     EXPECT_CALL(m_mockState, getCode()).WillOnce(testing::Return("main_menu"));
 
     ASSERT_FALSE(m_gameManager->shouldExit());
+}
+
+TEST(GameManagerNullTest, RouterNuloERecusadoNaConstrucao)
+{
+    EXPECT_THROW(GameManager{ nullptr }, std::invalid_argument);
 }

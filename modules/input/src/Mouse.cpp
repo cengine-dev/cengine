@@ -24,7 +24,8 @@ void Mouse::pushClick(const MouseClick click)
     }
     if (m_clicks.size() >= kQueueMax)
     {
-        return; // cheia: descarta o NOVO, para nao embaralhar a ordem
+        ++m_dropped; // cheia: descarta o NOVO, para nao embaralhar a ordem — e conta
+        return;
     }
     m_clicks.push_back(click);
 }
@@ -48,6 +49,12 @@ void Mouse::pushUp(const float x, const float y)
     if (m_drops.size() < kQueueMax)
     {
         m_drops.push_back(Drop{ true, m_drag.startX, m_drag.startY, x, y });
+    }
+    else
+    {
+        // Um gesto INTEIRO perdido — o pior dos descartes desta porta, porque o
+        // jogador viu a carta na mao o caminho todo.
+        ++m_dropped;
     }
 
     m_drag = DragState{};

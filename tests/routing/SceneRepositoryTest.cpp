@@ -6,6 +6,8 @@
 #include <mock/MockScene.hpp>
 
 #include <cengine/routing/SceneRepository.hpp>
+#include <memory>
+#include <stdexcept>
 
 using namespace cengine::core;
 using namespace cengine::routing;
@@ -131,4 +133,26 @@ TEST_F(SceneRepositoryTest, UnloadAllRemovesAllScenes) {
 
     ASSERT_EQ(factory1CallCount, 2);
     ASSERT_EQ(factory2CallCount, 2);
+}
+
+// =============================================================================
+// A FACTORY que nao entrega
+// =============================================================================
+
+TEST(SceneRepositoryNullTest, FactoryVaziaERecusadaNoRegISTRO)
+{
+    SceneRepository repo;
+    // O erro pertence a quem registrou: adiar ate o primeiro `getScene` poe a
+    // falha muitos minutos de jogo depois da causa.
+    EXPECT_THROW(repo.registerFactory("menu", nullptr), std::invalid_argument);
+}
+
+TEST(SceneRepositoryNullTest, FactoryQueDevolveNuloFALHAEmVezDeDereferenciar)
+{
+    SceneRepository repo;
+    repo.registerFactory("menu", [] { return std::unique_ptr<cengine::core::IScene>{}; });
+
+    // Ate aqui isto era `*(it->second)` num ponteiro nulo: comportamento
+    // indefinido no ponto mais quente do laco.
+    EXPECT_THROW((void)repo.getScene("menu"), std::runtime_error);
 }

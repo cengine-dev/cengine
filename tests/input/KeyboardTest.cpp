@@ -303,3 +303,51 @@ TEST(KeyboardTest, AsteroidsRecordNameIsTypedThroughTheQueue)
 
     EXPECT_EQ(name, "MR");
 }
+
+// =============================================================================
+// O DESCARTE deixa de ser mudo
+// =============================================================================
+//
+// A fila sempre teve teto e sempre jogou fora o evento novo quando enchia. O que
+// nao existia era o NUMERO: o jogador apertava, nada acontecia, e a conclusao
+// possivel era "o jogo travou". E o mesmo remedio que os batchers do casco ja
+// tinham (`Stats::dropped`), aplicado ao lado de ca.
+
+TEST(KeyboardDroppedTest, FilaQueNuncaEncheNaoDESCARTANADA)
+{
+    Keyboard teclado;
+    for (size_t i = 0; i < Keyboard::kQueueMax; ++i)
+    {
+        teclado.pushKey({ Key::Enter, ' ' });
+    }
+    EXPECT_EQ(teclado.dropped(), 0u);
+}
+
+TEST(KeyboardDroppedTest, ATeclaQueSUMIUAPARECENoContador)
+{
+    Keyboard teclado;
+    for (size_t i = 0; i < Keyboard::kQueueMax + 5; ++i)
+    {
+        teclado.pushKey({ Key::Enter, ' ' });
+    }
+    EXPECT_EQ(teclado.dropped(), 5u);
+}
+
+TEST(KeyboardDroppedTest, OContadorEACUMULADOENaoPorQuadro)
+{
+    // A pergunta que ele responde e "esta acontecendo?", e uma fila que estoura
+    // tres vezes numa partida nao pode depender de alguem olhar no quadro certo.
+    Keyboard teclado;
+    for (size_t i = 0; i < Keyboard::kQueueMax + 2; ++i)
+    {
+        teclado.pushKey({ Key::Up, ' ' });
+    }
+    while (teclado.readKey().key != Key::None) {} // esvazia a fila
+    EXPECT_EQ(teclado.dropped(), 2u) << "ler a fila nao pode apagar a historia do descarte";
+
+    for (size_t i = 0; i < Keyboard::kQueueMax + 3; ++i)
+    {
+        teclado.pushKey({ Key::Down, ' ' });
+    }
+    EXPECT_EQ(teclado.dropped(), 5u);
+}

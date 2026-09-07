@@ -7,6 +7,9 @@
 #include <cengine/core/IScene.hpp>
 #include <cengine/routing/IState.hpp>
 #include <cengine/routing/RouterInMemory.hpp>
+#include <stdexcept>
+
+#include <cengine/routing/SceneRepository.hpp>
 
 #include <mock/FakeState.hpp>
 #include <mock/MockScene.hpp>
@@ -80,4 +83,31 @@ TEST_F(RouterInMemoryTest, CurrentSceneResolvesSceneOfCurrentState) {
     IScene& returnedScene = routerService->currentScene();
 
     ASSERT_EQ(&returnedScene, &mockScene);
+}
+
+// =============================================================================
+// A FIACAO NULA e erro do chamador, e ele aparece na CONSTRUCAO
+// =============================================================================
+//
+// Ate aqui so `EngineManager` e `FlowRouter` validavam. Aqui o nulo atravessava
+// o construtor e so estourava no primeiro `currentState()` -- dentro do laco,
+// longe de quem montou a fiacao.
+
+TEST(RouterInMemoryNullTest, RepositorioNuloERecusadoNaConstrucao)
+{
+    EXPECT_THROW(RouterInMemory(nullptr, std::make_unique<FakeState>("menu")), std::invalid_argument);
+}
+
+TEST(RouterInMemoryNullTest, EstadoInicialNuloERecusadoNaConstrucao)
+{
+    EXPECT_THROW(RouterInMemory(std::make_unique<SceneRepository>(), nullptr), std::invalid_argument);
+}
+
+TEST(RouterInMemoryNullTest, AgendarEstadoNuloERecusado)
+{
+    RouterInMemory router{ std::make_unique<SceneRepository>(), std::make_unique<FakeState>("menu") };
+
+    EXPECT_THROW(router.requestState(nullptr), std::invalid_argument);
+    // E a recusa nao pode deixar meia navegacao pendurada.
+    EXPECT_FALSE(router.hasPendingStateChange());
 }

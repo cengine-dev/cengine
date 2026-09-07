@@ -251,5 +251,110 @@ TEST(SceneStackTest, PushingNullptrIsIgnored)
     EXPECT_TRUE(stack.empty());
 }
 
+// =============================================================================
+// QUEM SAIU no meio do quadro NAO recebe o resto do quadro
+// =============================================================================
+//
+// O `update`/`draw` copiam a pilha antes de iterar, para uma camada poder
+// empilhar ou desempilhar durante a propria chamada sem invalidar o iterador.
+// A copia sozinha criava um defeito: a camada removida no meio do laco -- que
+// ja recebeu `onExit()` -- continuava na copia e ainda recebia `update()`
+// depois. Cena morta continuando a simular.
+
+// Camada que, no proprio `update`, tira o topo da pilha.
+class PoppingLayer final: public core::IScene
+{
+public:
+    PoppingLayer(std::string name, std::string& log, SceneStack& stack):
+        m_name(std::move(name)), m_log(log), m_stack(stack)
+    {
+    }
+
+    void onEnter() override { m_log += m_name + ":enter "; }
+    /// `noDraw = true` move o desempilhamento para o `draw`, para o laco de
+    /// desenho ser exercitado pelo mesmo caminho que o de update.
+    void desempilharNoDraw() { m_noDraw = true; }
+
+    void update(core::Seconds) override
+    {
+        m_log += m_name + ":update ";
+        if (!m_noDraw)
+        {
+            m_stack.pop(); // tira o de cima, no meio do laco
+        }
+    }
+    void draw() override
+    {
+        m_log += m_name + ":draw ";
+        if (m_noDraw)
+        {
+            m_stack.pop();
+        }
+    }
+    void input() override { m_log += m_name + ":input "; }
+    void onExit() override { m_log += m_name + ":exit "; }
+
+private:
+    std::string  m_name;
+    std::string& m_log;
+    SceneStack&  m_stack;
+    bool         m_noDraw = false;
+};
+
+TEST(SceneStackTest, ALayerPoppedMidUpdateDoesNotStillGetUpdated)
+{
+    std::string log;
+    SceneStack  stack;
+
+    stack.push(std::make_shared<PoppingLayer>("mundo", log, stack));
+    stack.push(std::make_shared<RecordingLayer>("pausa", log));
+    log.clear();
+
+    stack.update(core::Seconds{ 0.016 });
+
+    // O "mundo" atualiza e desempilha a "pausa"; a "pausa" recebe `exit` e NAO
+    // pode receber `update` depois disso.
+    EXPECT_EQ(log, "mundo:update pausa:exit ");
+    EXPECT_EQ(stack.size(), 1u);
+}
+
+TEST(SceneStackTest, ALayerPoppedMidDrawDoesNotStillGetDrawn)
+{
+    std::string log;
+    SceneStack  stack;
+
+    const auto mundo = std::make_shared<PoppingLayer>("mundo", log, stack);
+    mundo->desempilharNoDraw();
+    stack.push(mundo);
+    stack.push(std::make_shared<RecordingLayer>("pausa", log));
+    log.clear();
+
+    stack.draw();
+
+    // O "mundo" desenha e desempilha a "pausa" no meio do laco de DESENHO: ela
+    // recebe `exit` e nao pode desenhar depois.
+    EXPECT_EQ(log, "mundo:draw pausa:exit ");
+    EXPECT_EQ(stack.size(), 1u);
+}
+
+TEST(SceneStackTest, TheLayerBELOWStillGetsTheFrameWhenTheOneAboveLeaves)
+{
+    // O contrario do teste acima, e ele importa tanto quanto: a guarda nova nao
+    // pode ter comido o criterio 1 do gate 18 (a cena de baixo continua rodando).
+    std::string log;
+    SceneStack  stack;
+
+    stack.push(std::make_shared<RecordingLayer>("mundo", log));
+    stack.push(std::make_shared<PoppingLayer>("hud", log, stack));
+    log.clear();
+
+    stack.update(core::Seconds{ 0.016 });
+
+    // O "hud" e o topo e desempilha a si mesmo; o "mundo" ja tinha atualizado.
+    EXPECT_NE(log.find("mundo:update "), std::string::npos);
+    EXPECT_NE(log.find("hud:exit "), std::string::npos);
+    EXPECT_EQ(stack.size(), 1u);
+}
+
 } // namespace
 } // namespace cengine::routing

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include <cengine/input/Key.hpp>
@@ -30,6 +31,19 @@ public:
     /// velho embaralharia a ordem que o jogador digitou.
     static constexpr size_t kQueueMax = 32;
 
+    /// **Quantas teclas esta porta ja jogou fora**, desde sempre.
+    ///
+    /// Ate aqui o descarte era MUDO: a fila enchia, a tecla sumia, e o jogador
+    /// concluia que o jogo tinha travado. E a mesma classe de defeito que os
+    /// batchers do casco resolveram com `Stats::dropped` -- *corpo que some sem
+    /// erro visivel e o pior jeito de errar* --, so que aqui o que some e a
+    /// intencao de quem esta jogando.
+    ///
+    /// Acumulado (nao por quadro) de proposito: a pergunta que ele responde e
+    /// *"esta acontecendo?"*, e uma fila que estoura tres vezes numa partida nao
+    /// pode depender de alguem estar olhando no quadro certo.
+    [[nodiscard]] uint32_t dropped() const { return m_dropped; }
+
     // --- lado da PLATAFORMA (quem captura) ---
 
     void pushKey(KeyEvent event);
@@ -58,6 +72,7 @@ private:
 
     std::vector<KeyEvent> m_queue;
     bool                  m_held[kKeyCount] = {};
+    uint32_t              m_dropped = 0;
 };
 
 } // namespace cengine::input

@@ -2,6 +2,7 @@
 
 #include <cengine/core/IScene.hpp>
 
+#include <stdexcept>
 #include <utility>
 
 #include <cengine/routing/IState.hpp>
@@ -10,7 +11,12 @@
 
 namespace cengine::routing {
 
-GameManager::GameManager(std::shared_ptr<IRouter> routerService) : m_routerService(std::move(routerService)){}
+GameManager::GameManager(std::shared_ptr<IRouter> routerService) : m_routerService(std::move(routerService)) {
+    // Ver RouterInMemory: a mesma regra, no mesmo momento.
+    if (!m_routerService) {
+        throw std::invalid_argument("GameManager: routerService must not be null");
+    }
+}
 
 void GameManager::onEnter() {
     // A ativação é rastreada aqui (não na cena): compara o código do estado

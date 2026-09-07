@@ -289,3 +289,42 @@ TEST(MouseTest, TheCueGesture)
 
 } // namespace
 } // namespace cengine::input
+
+using cengine::input::Mouse;
+using cengine::input::MouseButton;
+
+// =============================================================================
+// O DESCARTE deixa de ser mudo — irmao do Keyboard::dropped()
+// =============================================================================
+
+TEST(MouseDroppedTest, OCliqueQueSUMIUAPARECENoContador)
+{
+    Mouse ponteiro;
+    for (size_t i = 0; i < Mouse::kQueueMax + 4; ++i)
+    {
+        ponteiro.pushClick({ MouseButton::Left, 1.0f, 2.0f });
+    }
+    EXPECT_EQ(ponteiro.dropped(), 4u);
+}
+
+TEST(MouseDroppedTest, OGestoINTEIROPerdidoTambemConta)
+{
+    Mouse ponteiro;
+    for (size_t i = 0; i < Mouse::kQueueMax + 3; ++i)
+    {
+        ponteiro.pushDown(0.0f, 0.0f);
+        ponteiro.pushUp(5.0f, 5.0f);
+    }
+    // O pior dos descartes desta porta: o jogador viu a carta na mao o caminho
+    // todo, e o solta nao chegou a lugar nenhum.
+    EXPECT_EQ(ponteiro.dropped(), 3u);
+}
+
+TEST(MouseDroppedTest, BotaoNENHUMNaoEDescarte)
+{
+    Mouse ponteiro;
+    // `MouseButton::None` ja era recusado antes da fila — e recusar nao e
+    // perder: nunca houve clique nenhum ali.
+    ponteiro.pushClick({ MouseButton::None, 0.0f, 0.0f });
+    EXPECT_EQ(ponteiro.dropped(), 0u);
+}
