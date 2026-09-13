@@ -1,6 +1,7 @@
 # 30 - a cengine se publica para UM consumidor só (e tem dois)
 
-- **Status:** ABERTA — precisa de decisao do dono antes de virar codigo
+- **Status:** ABERTA — **a saida (A) ja tem o primeiro consumidor**; falta a
+  decisao para os demais
 - **Categoria:** Divida de plataforma (build), nao candidata a promocao
 - **Registrada em:** 2026-09-07, na revisao arquitetural
   (`c++/revisao-arquitetural.md`, achado 1.1)
@@ -167,3 +168,47 @@ publicar sua versao de qualquer jeito. So o item 3 depende da resposta.
    enumerando `.cpp`.
 4. A prova nao e "compilei um jogo antigo" (proibido pela fronteira do
    workspace): e ler o arquivo de pinagem e o que o build resolve.
+
+## O primeiro consumidor da saida (A) — `diorama`, 2026-09-13
+
+O dono mandou publicar as tags e apontar o lab para elas. Feito, e fechou a
+metade do achado que um consumidor consegue fechar sozinho.
+
+**As tags sairam:** `cengine 0.17.0`, e no casco `0.13.0`, `0.14.0`, `0.15.0` e
+`0.22.1` (tres retroativas, em commits cujas mensagens ja nomeavam a versao).
+
+> **As versoes que NAO ganharam tag, e por que.** A `cengine 0.16.0` e as
+> `0.16.0`–`0.22.0` do casco nunca existiram como pontos separados: um commit
+> carrega varias. Uma tag apontando para codigo que ja e a versao seguinte
+> mentiria sobre o que marca, e esta escrito dentro da mensagem das duas tags.
+
+**Como o `diorama` consome:** o `FetchContent` do `CMakeLists.txt` do lab, com
+`SOURCE_DIR` explicito em `deps/cengine`. O caminho estavel e o que permite ao
+MSBuild participar — o `_deps` padrao vive dentro do diretorio de build, que
+muda com o preset. O `.vcxproj` aponta para a mesma pasta.
+
+**Medido:** o comando do compilador passou a citar
+`diorama\deps\cengine\core\src\EngineManager.cpp`. Suite do lab 15/15, `.exe`
+verde.
+
+### O que isto ensina para a decisao que resta
+
+O custo previsto na saida (A) — *"o `.exe` passa a depender de o CMake ter
+rodado antes"* — se confirmou, e tem remedio barato: um `<Target>` com `<Error>`
+no `.vcxproj` que diz **qual comando rodar**, em vez de deixar o build falhar
+com "cabecalho nao encontrado" trinta linhas depois.
+
+E apareceu um custo que a task nao tinha previsto, e ele decide QUANDO pinar:
+
+> **Pinar quebra a edicao direta.** Editar a arvore ao lado e rebuildar deixa de
+> testar a mudanca. Para um consumidor que so USA a dependencia, isso nao custa
+> nada. Para um que a esta CONSTRUINDO junto, custa uma tag por iteracao.
+
+Foi por isso que o casco ficou de fora no `diorama`: as tasks 14, 15b e 18 mexem
+no `forgemesh` ao mesmo tempo que os degraus 08 e 09 o consomem. A tag `0.22.1`
+existe e espera.
+
+**A regra que sai disto, e ela serve para os 12 jogos:** *pina-se o que se
+consome, nao o que se constroi.* Jogo estacionado nunca constroi a engine —
+entao para eles a saida (A) e so ganho, e o obstaculo e o custo de adocao (uma
+linha por `.vcxproj`, todos REFERENCIA), e nao o desenho.
