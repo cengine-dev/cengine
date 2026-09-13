@@ -1,7 +1,7 @@
 # 30 - a cengine se publica para UM consumidor só (e tem dois)
 
-- **Status:** ABERTA — **a saida (A) ja tem o primeiro consumidor**; falta a
-  decisao para os demais
+- **Status:** **FECHADA EM NEGATIVO para os 12 jogos** (decisao do dono,
+  2026-09-13). O residuo util ja esta feito — ver "A decisao que fechou", no fim.
 - **Categoria:** Divida de plataforma (build), nao candidata a promocao
 - **Registrada em:** 2026-09-07, na revisao arquitetural
   (`c++/revisao-arquitetural.md`, achado 1.1)
@@ -212,3 +212,42 @@ existe e espera.
 consome, nao o que se constroi.* Jogo estacionado nunca constroi a engine —
 entao para eles a saida (A) e so ganho, e o obstaculo e o custo de adocao (uma
 linha por `.vcxproj`, todos REFERENCIA), e nao o desenho.
+
+## A decisao que fechou (2026-09-13)
+
+> *"os 12 jogos ja feitos nao serao tocados. Servem de historico de estudo."*
+
+**Isto fecha o achado para eles, e fecha em NEGATIVO** — a mesma forma com que a
+task 18, a 22b e o broadphase fecharam neste ecossistema: a pergunta deixa de
+ter resposta porque deixa de ter caso.
+
+A divergencia entre a suite e o `.exe` de um jogo so se manifesta se alguem
+**recompilar** aquele jogo. O ADR 0003 ja dizia que jogo estacionado nao e
+recompilado; o que mudou hoje e que isso deixou de ser suposicao operacional e
+virou **decisao declarada**. Nao ha, nem havera, o evento que expoe o defeito.
+
+### O que NAO fecha junto
+
+**O padrao, para quem vier depois.** Ele ja existe, medido e em uso no
+`diorama`:
+
+| dependencia | mecanismo | por que |
+|---|---|---|
+| o que se **consome** | tag (`FetchContent` + `SOURCE_DIR` estavel) | a versao e a verdade |
+| o que se **constroi junto** | conferencia (`...ExpectedVersion` no `.props`) | uma linha para subir, em vez de um release por iteracao |
+
+**O item 1 do escopo (`cengine.props`) continua valendo, e por outro motivo.**
+Nao pela pinagem: porque o `.vcxproj` do `diorama` ainda **enumera os `.cpp` da
+engine** (`EngineManager.cpp`, `Keyboard.cpp`, `Mouse.cpp`, `Camera.cpp`). No
+dia em que um modulo ganhar um segundo `.cpp`, o link quebra — que e exatamente
+o defeito que a task 09 do casco documentou e que a task 16 de la resolveu para
+o casco.
+
+Com **um** consumidor MSBuild, o risco e pequeno e conhecido. Fica registrado
+aqui em vez de virar trabalho agora.
+
+### O item 2 (a versao alcancavel por MSBuild)
+
+Feito do lado do casco (task 21, item 3: `TheForgeCommonVersion` + conferencia
+opt-in). Do lado da cengine, ele so tem uso junto com o item 1 — e espera com
+ele.
