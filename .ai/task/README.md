@@ -113,6 +113,10 @@ Ler antes de executar as tarefas de arquitetura:
 | 26 | [Grade em pixels: célula ↔ pixel](26-grid-pixel-mapping.md) ✅ 0.14.0 | 🟢 Baixa/Média (gate disparou quando a VOLTA chegou a 2: bulwark + tactics; delve é a 3ª evidência da ida) | Arquitetura |
 | 27 | [Mouse como porta de input](27-mouse-vocabulary-port.md) ✅ 0.14.0 | 🟡 Média (2/2 — e o 2º consumidor usou a forma do 1º SEM MUDAR NADA, que é o sinal mais forte deste filtro) | Arquitetura |
 | 28 | [Arrastar na porta de ponteiro](28-drag-vocabulary-port.md) ✅ 0.15.0 | 🟡 Média (2/2 — o MESMO sinal outra vez: as duas leituras, os quatro campos, zero pedidos de mudança) | Arquitetura |
+| 29 | [`camera3d`: a metade de MUNDO em tres eixos](29-camera3d.md) ✅ 0.16.0 | 🟡 Média (2/2 — vigil escreveu à mão, diorama extraiu; 15 testes, 4 deles o pedágio da Emenda 1) | Arquitetura |
+| 30 | [A cengine se publica para UM consumidor só (e tem dois)](30-dependencia-partida.md) | 🔴 **ABERTA — decisão do dono**: o `.exe` segue o `GIT_TAG` (A) ou a árvore declara e o build confere (C)? | Build |
+| 31 | [`collision2d`: a borda responde de dois jeitos](31-collision2d-a-borda.md) | 🟡 **ABERTA — proposta escrita** | Arquitetura |
+| 32 | [O vocabulário das portas](32-vocabulario-das-portas.md) | 🟡 **ABERTA — proposta escrita** (cobre 2.5, 2.11 e 1.4) | Arquitetura |
 
 ## Candidatas e estado dos gates
 

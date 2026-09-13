@@ -1,8 +1,12 @@
-# 30 - a dependencia PARTIDA: o `.exe` e os testes veem cengines diferentes
+# 30 - a cengine se publica para UM consumidor só (e tem dois)
 
 - **Status:** ABERTA — precisa de decisao do dono antes de virar codigo
 - **Categoria:** Divida de plataforma (build), nao candidata a promocao
-- **Registrada em:** 2026-09-07, na revisao arquitetural (`c++/revisao-arquitetural.md`, achado 1.1)
+- **Registrada em:** 2026-09-07, na revisao arquitetural
+  (`c++/revisao-arquitetural.md`, achado 1.1)
+- **Reescrita em:** 2026-09-13 — **o escopo original estava no repo errado**; ver
+  a secao "A correcao de escopo", abaixo
+- **Task irma:** `platform-theforge-common/.ai/task/23-o-props-declara-o-que-exige.md`
 
 ## O fato, medido
 
@@ -14,19 +18,16 @@ Cada jogo declara a cengine **duas vezes**, por dois caminhos que nao conversam:
 | `.vcxproj` (o executavel) | `$(GameRoot)..\cengine\` | **o que estiver em disco** |
 
 E o `.vcxproj` **nao linka a copia pinada**: ele enumera e compila os `.cpp` da
-arvore de trabalho. Do `bulwark/CMakeLists.txt` e do `.vcxproj` dele, lado a
-lado:
+arvore de trabalho. Do `bulwark`, os dois lados lado a lado:
 
 ```
 GIT_TAG 0.13.0                                      <- o que a suite prova
 CengineRoot)core\src\EngineManager.cpp              <- o que o .exe roda
 CengineRoot)modules\routing\src\GameManager.cpp
 CengineRoot)modules\routing\src\RouterInMemory.cpp
-CengineRoot)modules\routing\src\SceneRepository.cpp
 CengineRoot)modules\routing\src\SceneStack.cpp
 CengineRoot)modules\input\src\Keyboard.cpp
-CengineRoot)modules\collision2d\src\Intersects.cpp
-CengineRoot)modules\anim\src\Animator.cpp
+...
 ```
 
 **A suite de um jogo prova o comportamento de uma versao da engine, e o
@@ -44,82 +45,125 @@ tactics 0.13.0; klondike e counter 0.14.0.
 Sem cengine no CMake (so no `.vcxproj`, portanto **so** pela arvore): cue, fold,
 vigil, diorama.
 
-**O casco e outro caso, e nele nao ha pinagem nenhuma:** `CommonRoot =
-$(GameRoot)..\platform-theforge-common\` nos 14 `.vcxproj`. Ele e a unica
-dependencia do ecossistema sem nenhuma forma de versao.
+### Isto ja aconteceu
 
-## Por que isto nao tinha aparecido
+As correcoes da revisao (`RouterInMemory`, `GameManager`, `SceneRepository`,
+`SceneStack`, `Keyboard`) entraram no caminho de compilacao do executavel dos 12
+jogos no instante em que foram salvas. A varredura por padroes que as guardas
+novas recusariam (`requestState(nullptr)`, factory vazia, construcao com router
+nulo) nao achou ocorrencia, e a unica mudanca com efeito observavel
+(`SceneStack`) alcanca bulwark e delve.
 
-Porque o ADR 0003 resolve o problema **por disciplina**: jogos estacionados nao
-sao recompilados, entao a divergencia nunca e observada. A regra funciona
-enquanto ninguem abre um jogo antigo — e ela e exatamente o tipo de regra que a
-[[projetos-referencia-nao-tocar]] existe para lembrar.
+**Deu certo por sorte, e nao por desenho.**
 
-Mas a regra protege o jogo, nao a ENGENHARIA: quem mexe na cengine hoje nao tem
-como saber o que quebrou, porque a unica suite que existe e a da propria cengine.
-A suite de cada jogo esta olhando para uma versao congelada no GitHub.
+## A correcao de escopo (2026-09-13)
 
-**Isto ja aconteceu nesta sessao.** As correcoes do Grupo 1 da revisao
-(`RouterInMemory`, `GameManager`, `SceneRepository`, `SceneStack`, `Keyboard`)
-entraram no caminho de compilacao do executavel dos 12 jogos no instante em que
-foram salvas. A varredura por padroes que as guardas novas recusariam
-(`requestState(nullptr)`, factory vazia, construcao com router nulo) nao achou
-ocorrencia nenhuma, e a unica mudanca com efeito observavel (`SceneStack`)
-alcanca bulwark e delve. Deu certo — **por sorte, e nao por desenho**.
+A primeira versao desta task propunha, entre as saidas, *"o `.vcxproj` passa a
+apontar o `CengineRoot` para `_deps`"* — uma edicao em 12 `.vcxproj` de jogos.
 
-## As tres saidas
+O dono apontou o problema: **`.vcxproj` e artefato do The-Forge, nao da
+cengine.** Ele existe porque o jogo linka contra a cadeia de build do The-Forge
+— `TF_Shared.props`, o `LibraryPath` da solution `Unit_Tests`, o `fsl.targets`,
+os exports do Agility SDK. Nada disso e assunto desta engine.
 
-### A. O `.vcxproj` passa a consumir o que o CMake ja pina
+**Medido:** a cengine nao tem nenhum artefato MSBuild escrito a mao. Os
+`.vcxproj` sob `build/` sao gerados pelo CMake, em pasta ignorada. Ela publica
+**uma** forma de ser consumida, e tem **duas** classes de consumidor.
 
-O jogo ja baixa a cengine na versao certa (`_deps/cengine-src`). O `.vcxproj`
-apontaria o `CengineRoot` para la, em vez de `..\cengine`.
+> O fato do achado continua inteiro. O que estava errado era **de quem e o
+> mecanismo** — e a task prescrevia trabalho em arquivos que este repo nao
+> possui.
 
-- **A favor:** uma versao so por jogo, sem inventar mecanismo novo. A pinagem que
-  ja existe passa a valer para o binario.
-- **Contra:** o `.exe` passa a depender de o CMake ter rodado antes (a pasta
-  `_deps` so existe depois do configure). Hoje os dois builds sao independentes.
-- **Custo:** uma linha por `.vcxproj`, em 12 jogos — **e todos sao REFERENCIA**.
-  Nao da para fazer sem quebrar a fronteira do workspace, entao seria "cada
-  projeto adota quando alguem voltar a toca-lo", como a task 16 do casco fez.
+### A regra que decide, e ela ja existia
 
-### B. A cengine ganha `install()` + `find_package`
+A task 16 do casco fechou com uma regra que vale aqui:
 
-O caminho canonico de CMake: `install(TARGETS ... EXPORT)`, `cengineConfig.cmake`,
-e o consumidor pede `find_package(cengine 0.17 REQUIRED)`.
+> **Quem tem os arquivos e quem os descreve.**
 
-- **A favor:** resolve de verdade, e resolve para qualquer consumidor futuro.
-- **Contra:** **nao resolve o `.vcxproj`**, que e onde o problema esta. MSBuild
-  nao fala `find_package`. Ficaria bonito no CMake e nao tocaria no binario.
-- **Veredito preliminar:** sozinha, ela nao responde a esta task.
+O casco descreve o casco (`TheForgeCommon.props`). Pela mesma regra, a cengine
+descreve a cengine — e o fato de a descricao ser MSBuild e consequencia de
+**quem consome**, e nao propriedade de **quem possui**.
 
-### C. Um arquivo de pinagem que o build CONFERE
+**Isto nao contraria o ADR 0001.** Ele proibe a cengine de escolher biblioteca
+grafica; um `.props` que lista fontes e include paths nao e decisao grafica. A
+engine ja publica um descritor de build (CMake); publicar o segundo nao e
+mudanca de natureza.
 
-Um `cengine.pin` (ou uma propriedade no `.props`) declarando a versao esperada, e
-uma checagem que FALHA o build quando a arvore nao bate.
+**O custo honesto:** a cengine passa a carregar um arquivo especifico de
+Windows/MSBuild, e ela e feita para ser portatil. O arquivo e inerte em qualquer
+outra plataforma, mas esta la.
 
-- **A favor:** e a unica das tres que serve para o CASCO tambem — e o casco e o
-  caso sem pinagem nenhuma. Nao exige mudar o modelo de build de ninguem.
-- **Contra:** e mecanismo caseiro; a conferencia precisa de um numero que a
-  cengine publique (o `VersionTest`/`cengine_VERSION` da 0.17.0 ja da isso).
-- **Nota:** casa com a task irma do casco (a versao dele hoje so existe no
-  `README.md`).
+## O escopo desta task
+
+**1. `cengine.props` — a engine se descreve para MSBuild.**
+
+Espelho do `TheForgeCommon.props`, com uma diferenca que importa: os modulos da
+cengine sao **opt-in** (ADR 0001), entao a lista nao pode ser plana. Mesmo
+mecanismo que o casco usou para o `ForgeAudio.cpp`:
+
+```xml
+<ItemGroup Condition="'$(CengineRouting)' == 'true'">
+  <ClCompile Include="$(CengineDir)modules\routing\src\*.cpp" />
+</ItemGroup>
+```
+
+O consumidor liga o que usa, como ja faz hoje enumerando a mao — a diferenca e
+que passa a ligar por NOME de modulo, e nao por caminho de arquivo.
+
+**2. A versao, em forma conferivel por MSBuild.**
+
+A 0.17.0 ja publica `cengine_VERSION` no CMake e o `VersionTest` que confere o
+CHANGELOG. Falta o mesmo numero alcancavel de fora do CMake — uma propriedade no
+`.props`, ou um `Version.hpp` gerado.
+
+**3. A pinagem, que e a pergunta aberta.** Ver abaixo.
+
+## As duas saidas que restam
+
+A saida **B** da versao original (`install()` + `find_package`) segue descartada
+pela mesma razao: **MSBuild nao fala `find_package`**. Ela ficaria bonita no
+CMake e nao tocaria no binario, que e onde o problema esta.
+
+### A. O `.exe` passa a consumir o que o CMake ja pina
+
+O jogo ja baixa a cengine na versao certa (`_deps/cengine-src`); o `CengineDir`
+apontaria para la.
+
+- **A favor:** uma versao so por jogo. A pinagem que ja existe passa a valer para
+  o binario.
+- **Contra:** o `.exe` passa a depender de o CMake ter rodado antes. Hoje os dois
+  builds sao independentes.
+- **Custo:** uma linha por `.vcxproj`, em 12 jogos — **todos REFERENCIA**. Entao
+  a adocao e opt-in, projeto a projeto, como a task 16 do casco fez.
+
+### C. A arvore declara sua versao, e o build CONFERE
+
+O `.props` da cengine declara a versao que a arvore tem; o consumidor declara a
+que espera; o build **falha** quando divergem.
+
+- **A favor:** e a unica das duas que serve para o **casco** tambem — e o casco e
+  o caso sem pinagem nenhuma (`CommonRoot` nos 14 `.vcxproj`, versao so numa
+  linha do `README.md`). Nao exige mudar o modelo de build de ninguem.
+- **Contra:** e mecanismo caseiro, e move a verdade para a arvore — o `GIT_TAG`
+  passa a ser o que pode estar errado.
 
 ## A pergunta que fica para o dono
 
-> O executavel dos jogos deve seguir a versao pinada (A), ou a arvore deve
-> declarar sua versao e ser conferida (C)?
+> O executavel deve seguir a versao **pinada** (A), ou a **arvore** deve declarar
+> sua versao e ser conferida (C)?
 
-Sao respostas diferentes para "o que e a verdade sobre qual cengine este jogo
-usa": em (A) a verdade e o `GIT_TAG`; em (C) e a arvore, e o `GIT_TAG` passa a
-ser o que esta errado.
+Sao respostas diferentes para *"o que e a verdade sobre qual cengine este jogo
+usa"*. Em (A) a verdade e o `GIT_TAG`; em (C) e a arvore.
 
-**O que NAO se deve fazer e escolher (B) achando que fecha o assunto.**
+**Os itens 1 e 2 do escopo valem nas duas** — a engine precisa se descrever e
+publicar sua versao de qualquer jeito. So o item 3 depende da resposta.
 
 ## Criterios de aceite (quando a decisao existir)
 
 1. Abrir um jogo estacionado e compilar o `.exe` usa a MESMA cengine que a suite
    dele — ou o build falha dizendo qual e a divergencia.
-2. O mesmo vale para o casco, que hoje nao tem versao em lugar nenhum alem de uma
-   linha do `README.md`.
-3. A prova nao e "compilei um jogo antigo" (proibido pela fronteira do
+2. O mesmo vale para o casco (ver a task irma, que fecha a outra metade).
+3. Um consumidor MSBuild liga um modulo da cengine por **nome**, e nao
+   enumerando `.cpp`.
+4. A prova nao e "compilei um jogo antigo" (proibido pela fronteira do
    workspace): e ler o arquivo de pinagem e o que o build resolve.
